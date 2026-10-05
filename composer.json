@@ -60,13 +60,13 @@
         "audit": {
             "block-insecure": false
         },
-        "bump-after-update": "dev",
         "preferred-install": {
             "*": "dist"
         },
         "sort-packages": true
     },
     "scripts": {
+        "bump:tools": "@composer bump ergebnis/composer-normalize friendsofphp/php-cs-fixer phpstan/* phpunit/phpunit rector/rector",
         "test": "phpunit",
         "test:coverage": "phpunit"
     }

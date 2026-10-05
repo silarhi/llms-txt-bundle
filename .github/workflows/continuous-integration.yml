@@ -6,8 +6,6 @@ on:
         branches:
             - '*.x'
             - 'main'
-        tags:
-            - 'v*'
 
 permissions:
     contents: read
