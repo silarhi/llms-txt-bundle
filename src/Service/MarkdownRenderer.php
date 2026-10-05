@@ -21,12 +21,18 @@ use Silarhi\LlmsTxtBundle\Model\Link;
 use Silarhi\LlmsTxtBundle\Model\Section;
 
 use function sprintf;
+use function strlen;
 
 /**
  * Renders a document in the format of https://llmstxt.org.
  */
 final class MarkdownRenderer implements RendererInterface
 {
+    /**
+     * The lines are sent in chunks of about this size: one write and one hash update per chunk, not per link.
+     */
+    private const CHUNK_SIZE = 64 * 1024;
+
     /**
      * Checks the document right away, then renders it chunk by chunk: a response or a file can start before the
      * links are read, and never fails half written for a missing title.
@@ -46,6 +52,25 @@ final class MarkdownRenderer implements RendererInterface
      * @return Generator<int, string>
      */
     private function renderChunks(string $title, Document $document): Generator
+    {
+        $chunk = '';
+        foreach ($this->renderLines($title, $document) as $line) {
+            $chunk .= $line;
+            if (strlen($chunk) >= self::CHUNK_SIZE) {
+                yield $chunk;
+                $chunk = '';
+            }
+        }
+
+        if ('' !== $chunk) {
+            yield $chunk;
+        }
+    }
+
+    /**
+     * @return Generator<int, string>
+     */
+    private function renderLines(string $title, Document $document): Generator
     {
         yield '# ' . $title . "\n";
 
@@ -98,6 +123,12 @@ final class MarkdownRenderer implements RendererInterface
      */
     private function inline(string $text): string
     {
+        // most values have nothing to collapse: no ASCII whitespace but single spaces, and none of the lead bytes of
+        // the UTF-8 spaces \s matches in Unicode mode (U+0085, U+00A0, U+1680, U+2000 to U+3000)
+        if (false === strpbrk($text, "\t\n\v\f\r\xC2\xE1\xE2\xE3") && !str_contains($text, '  ')) {
+            return trim($text);
+        }
+
         return trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
     }
 

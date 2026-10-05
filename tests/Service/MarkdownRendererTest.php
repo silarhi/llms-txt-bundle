@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Silarhi\LlmsTxtBundle\Tests\Service;
 
+use function count;
+
 use Generator;
 use IteratorAggregate;
 use LogicException;
@@ -22,6 +24,8 @@ use Silarhi\LlmsTxtBundle\Model\Document;
 use Silarhi\LlmsTxtBundle\Model\Link;
 use Silarhi\LlmsTxtBundle\Model\Section;
 use Silarhi\LlmsTxtBundle\Service\MarkdownRenderer;
+
+use function strlen;
 
 final class MarkdownRendererTest extends TestCase
 {
@@ -74,6 +78,36 @@ final class MarkdownRendererTest extends TestCase
             - [A title](https://example.com): A description
 
             MD, $this->render($document));
+    }
+
+    public function testCollapsesTheUnicodeSpaces(): void
+    {
+        $document = (new Document("Caf\u{e9}\u{a0}\u{a0}cr\u{e8}me"))
+            ->addLink('Pages', 'https://example.com', "L\u{2019}offre\u{2028}du jour", "Prime\u{202f}: 50\u{a0}\u{20ac}");
+
+        self::assertSame(<<<MD
+            # Caf\u{e9} cr\u{e8}me
+
+            ## Pages
+
+            - [L\u{2019}offre du jour](https://example.com): Prime : 50 \u{20ac}
+
+            MD, $this->render($document));
+    }
+
+    public function testSendsLargeChunks(): void
+    {
+        $links = static function (): Generator {
+            for ($i = 0; $i < 5000; ++$i) {
+                yield new Link('https://example.com/offers/' . $i, 'Offer ' . $i);
+            }
+        };
+
+        $chunks = [...(new MarkdownRenderer())->render((new Document('Example'))->addLinks('Offers', $links()))];
+
+        self::assertLessThan(10, count($chunks));
+        self::assertGreaterThanOrEqual(64 * 1024, strlen($chunks[0]));
+        self::assertStringEndsWith("- [Offer 4999](https://example.com/offers/4999)\n", $chunks[count($chunks) - 1]);
     }
 
     public function testEscapesLinks(): void

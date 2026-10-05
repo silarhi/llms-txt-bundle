@@ -38,7 +38,7 @@ final readonly class LlmsTxtController
      */
     private const BUFFER_MEMORY = 256 * 1024;
 
-    private const CHUNK_SIZE = 8192;
+    private const CHUNK_SIZE = 64 * 1024;
 
     public function __construct(
         private GeneratorInterface $generator,
