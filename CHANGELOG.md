@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-05
+
+### Added
+
+- `Silarhi\LlmsTxtBundle\Routing\LlmsTxtEntry`, the `llms_txt` route option as an object: `options: ['llms_txt' => new LlmsTxtEntry(title: 'CGU', section: Section::OPTIONAL)]` in a `#[Route]` attribute, typed and checked by the IDE and static analysis instead of an array whose typos only failed at render time. An empty title or section fails as soon as the routes load. The array form stays for the routes YAML or XML declare.
+
 ## [1.1.1] - 2026-10-05
 
 ### Changed
@@ -32,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Document::addLinks()` takes an iterable read only while the file is rendered: with a generator, the memory stays flat whatever the number of links.
 - Discovery: the `llms_txt_link()` and `llms_txt_url()` Twig functions, and an opt-in `Link` header on HTML pages through WebLink (`discovery.link_header`).
 
+[1.2.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/silarhi/llms-txt-bundle/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/silarhi/llms-txt-bundle/releases/tag/v1.0.0

@@ -17,6 +17,7 @@ use function dirname;
 
 use Override;
 use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
+use Silarhi\LlmsTxtBundle\Routing\LlmsTxtEntry;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -100,7 +101,7 @@ final class TestKernel extends Kernel
 
         $routes->add('contact', '/contact')
             ->controller([PageController::class, 'html'])
-            ->options(['llms_txt' => ['title' => 'Contact', 'description' => 'How to reach us']]);
+            ->options(['llms_txt' => new LlmsTxtEntry(title: 'Contact', description: 'How to reach us')]);
         $routes->add('legal', '/legal')
             ->controller([PageController::class, 'html'])
             ->options(['llms_txt' => ['title' => 'Legal notice', 'section' => 'Optional']]);

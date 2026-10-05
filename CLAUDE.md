@@ -27,6 +27,7 @@ src/
 │                       #   DiscoveryLinkListener (Link header of HTML pages, through WebLink's "_links")
 ├── Exception/          # LlmsTxtExceptionInterface and implementations
 ├── Model/              # Document, Section (links or lazy iterables of links), Link
+├── Routing/            # LlmsTxtEntry: the "llms_txt" route option as an object (fromArray() for YAML/XML routes)
 ├── Service/            # Generator (+ interface), MarkdownRenderer (+ RendererInterface), Dumper (+ interface),
 │                       #   UrlGenerator (absolute URL of the file, for discovery)
 ├── Twig/               # LlmsTxtExtension (llms_txt_url, llms_txt_link)
@@ -143,6 +144,7 @@ Lightweight tag `vX.Y.Z` on `origin/main` once CI is green, with a GitHub releas
 
 - **Adding links**: a listener of `LlmsTxtPopulateEvent` calls `$event->getDocument()->addLinks($section, $generator)`;
   `addLink()` only for a handful of links.
-- **Static pages**: `options: ['llms_txt' => ['title' => …, 'description' => …, 'section' => …]]` on the route.
+- **Static pages**: `options: ['llms_txt' => new LlmsTxtEntry(title: …, description: …, section: …)]` on the route;
+  the array form (`{title, description, section}`) for YAML/XML routes, both validated by `LlmsTxtEntry`.
 - **Bundle configuration**: all options are defined in `LlmsTxtBundle::configure()` and wired in
   `LlmsTxtBundle::loadExtension()`.

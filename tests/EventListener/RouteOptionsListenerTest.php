@@ -20,6 +20,8 @@ use Silarhi\LlmsTxtBundle\EventListener\RouteOptionsListener;
 use Silarhi\LlmsTxtBundle\Exception\InvalidRouteOptionException;
 use Silarhi\LlmsTxtBundle\Model\Document;
 use Silarhi\LlmsTxtBundle\Model\Link;
+use Silarhi\LlmsTxtBundle\Model\Section;
+use Silarhi\LlmsTxtBundle\Routing\LlmsTxtEntry;
 use Symfony\Component\Routing\Loader\ClosureLoader;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route;
@@ -32,13 +34,14 @@ final class RouteOptionsListenerTest extends TestCase
     {
         $document = $this->populate([
             'home' => new Route('/'),
-            'contact' => new Route('/contact', options: ['llms_txt' => ['title' => 'Contact', 'description' => 'Reach us']]),
-            'legal' => new Route('/legal', options: ['llms_txt' => ['title' => 'Legal', 'section' => 'Optional']]),
+            'contact' => new Route('/contact', options: ['llms_txt' => new LlmsTxtEntry(title: 'Contact', description: 'Reach us')]),
+            'about' => new Route('/about', options: ['llms_txt' => ['title' => 'About']]),
+            'legal' => new Route('/legal', options: ['llms_txt' => new LlmsTxtEntry(title: 'Legal', section: Section::OPTIONAL)]),
             'hidden' => new Route('/hidden', options: ['llms_txt' => false]),
         ]);
 
         self::assertCount(2, $document->getSections());
-        self::assertEquals([new Link('https://example.com/contact', 'Contact', 'Reach us')], iterator_to_array($document->section('Pages')->getLinks(), false));
+        self::assertEquals([new Link('https://example.com/contact', 'Contact', 'Reach us'), new Link('https://example.com/about', 'About')], iterator_to_array($document->section('Pages')->getLinks(), false));
         self::assertEquals([new Link('https://example.com/legal', 'Legal')], iterator_to_array($document->section('Optional')->getLinks(), false));
     }
 
@@ -47,7 +50,7 @@ final class RouteOptionsListenerTest extends TestCase
      */
     public static function provideInvalidOptions(): iterable
     {
-        yield 'not an array' => [true, 'must be an array'];
+        yield 'neither an entry nor an array' => [true, 'must be a Silarhi\\LlmsTxtBundle\\Routing\\LlmsTxtEntry or an array, "bool" given'];
         yield 'no title' => [['description' => 'Reach us'], 'needs a non-empty "title"'];
         yield 'empty title' => [['title' => ' '], 'needs a non-empty "title"'];
         yield 'unknown key' => [['title' => 'Contact', 'priority' => 1], 'unknown keys "priority"'];
@@ -58,10 +61,13 @@ final class RouteOptionsListenerTest extends TestCase
     #[DataProvider('provideInvalidOptions')]
     public function testRejectsInvalidOptions(mixed $options, string $message): void
     {
-        $this->expectException(InvalidRouteOptionException::class);
-        $this->expectExceptionMessage($message);
-
-        $this->populate(['contact' => new Route('/contact', options: ['llms_txt' => $options])]);
+        try {
+            $this->populate(['contact' => new Route('/contact', options: ['llms_txt' => $options])]);
+            self::fail('The option should have been rejected');
+        } catch (InvalidRouteOptionException $exception) {
+            self::assertStringStartsWith('The "llms_txt" option of the route "contact"', $exception->getMessage());
+            self::assertStringContainsString($message, $exception->getMessage());
+        }
     }
 
     public function testRejectsRoutesNeedingParameters(): void
@@ -69,7 +75,7 @@ final class RouteOptionsListenerTest extends TestCase
         $this->expectException(InvalidRouteOptionException::class);
         $this->expectExceptionMessage('needs parameters');
 
-        $this->populate(['offer' => new Route('/offers/{slug}', options: ['llms_txt' => ['title' => 'Offer']])]);
+        $this->populate(['offer' => new Route('/offers/{slug}', options: ['llms_txt' => new LlmsTxtEntry('Offer')])]);
     }
 
     /**
