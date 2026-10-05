@@ -1,0 +1,73 @@
+name: 'Continuous Integration'
+
+on:
+    pull_request:
+    push:
+        branches:
+            - '*.x'
+            - 'main'
+        tags:
+            - 'v*'
+
+permissions:
+    contents: read
+
+# Supersede outdated runs of a pull request; push runs (head_ref empty) are never cancelled.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+    cancel-in-progress: true
+
+jobs:
+    matrix:
+        name: Generate job matrix
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        outputs:
+            matrix: ${{ steps.matrix.outputs.matrix }}
+        steps:
+            - name: Gather CI configuration
+              id: matrix
+              uses: laminas/laminas-ci-matrix-action@v1
+
+    qa:
+        name: QA Checks
+        needs: [matrix]
+        runs-on: ${{ matrix.operatingSystem }}
+        timeout-minutes: 15
+        strategy:
+            fail-fast: false
+            matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+        steps:
+            - name: ${{ matrix.name }}
+              uses: laminas/laminas-continuous-integration-action@v1
+              with:
+                  job: ${{ matrix.job }}
+            - name: Upload coverage
+              if: ${{ !cancelled() && startsWith(matrix.name, 'PHPUnit [') && endsWith(matrix.name, ', latest]') }}
+              uses: actions/upload-artifact@v7
+              with:
+                  name: clover-${{ fromJSON(matrix.job).php }}
+                  path: coverage/clover.xml
+                  if-no-files-found: ignore
+                  retention-days: 30
+
+    coverage:
+        name: Coverage
+        needs: [qa]
+        if: ${{ !cancelled() }}
+        permissions:
+            actions: read
+            contents: write
+            pull-requests: write
+        uses: silarhi/.github/.github/workflows/coverage-report.yml@main
+
+    ci-passed:
+        name: CI passed
+        needs: [matrix, qa]
+        if: always()
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - name: Check that all required jobs succeeded
+              if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+              run: exit 1

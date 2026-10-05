@@ -1,0 +1,13 @@
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+    tmpDir: var/tools/phpstan
+    ignoreErrors:
+        # the config tree validates $config: its shape is narrowed by an inline @var, the parent signature allows no @param
+        -
+            identifier: missingType.iterableValue
+            path: src/LlmsTxtBundle.php
+            message: '#loadExtension#'
+            count: 1
