@@ -88,12 +88,12 @@ llms_txt:
 # config/packages/llms_txt.yaml
 llms_txt:
     # The H1 of the file, the name of the site (required, unless a listener sets it)
-    title: 'Offre Parrainages'
+    title: 'SILARHI'
     # A short summary, rendered as a blockquote
-    summary: 'Comparateur des offres de parrainage bancaires : primes, conditions et codes parrain vérifiés.'
+    summary: 'Agence de développement Web PHP à Toulouse : applications Web et mobiles sur mesure, de la conception à la maintenance.'
     # Free Markdown rendered after the summary: paragraphs, lists, anything but headings
     details: |
-        Les primes sont vérifiées chaque jour.
+        Devis rapide et gratuit, interventions à Toulouse et partout en France.
     # The section of the routes carrying an "llms_txt" option without one of their own
     route_section: 'Pages'
     # Where llms-txt:dump writes the file, and where the controller looks for it first
@@ -122,7 +122,7 @@ final readonly class LlmsTxtListener
 {
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
-        private OfferRepository $offerRepository,
+        private ProjectRepository $projectRepository,
     ) {
     }
 
@@ -131,19 +131,19 @@ final readonly class LlmsTxtListener
     {
         $document = $event->getDocument();
 
-        foreach ($this->offerRepository->findBy(['enabled' => true]) as $offer) {
+        foreach ($this->projectRepository->findBy(['published' => true]) as $project) {
             $document->addLink(
-                'Offres',
-                $this->urlGenerator->generate('offer_get', ['slug' => $offer->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
-                $offer->getName(),
-                $offer->getTagline(), // optional description
+                'Projets',
+                $this->urlGenerator->generate('project_show', ['slug' => $project->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
+                $project->getName(),
+                $project->getSummary(), // optional description
             );
         }
     }
 }
 ```
 
-The document can also be changed as a whole: `setTitle()`, `setSummary()`, `setDetails()`, or `section('Offres')->addLink(new Link(...))`. Sections keep the order of their first use, except `Optional` ([its links can be skipped](https://llmstxt.org/#format) when a shorter context is needed), which always comes last.
+The document can also be changed as a whole: `setTitle()`, `setSummary()`, `setDetails()`, or `section('Projets')->addLink(new Link(...))`. Sections keep the order of their first use, except `Optional` ([its links can be skipped](https://llmstxt.org/#format) when a shorter context is needed), which always comes last.
 
 > [!TIP]
 > Keep the file consistent with your sitemap: add the pages you index, not the `noindex` ones.
@@ -159,22 +159,22 @@ written to the file as soon as it is rendered. With a generator, the memory stay
 #[AsEventListener]
 public function __invoke(LlmsTxtPopulateEvent $event): void
 {
-    $event->getDocument()->addLinks('Offres', $this->offerLinks());
+    $event->getDocument()->addLinks('Projets', $this->projectLinks());
 }
 
 /**
  * @return iterable<Link>
  */
-private function offerLinks(): iterable
+private function projectLinks(): iterable
 {
-    $query = $this->offerRepository->createQueryBuilder('o')->where('o.enabled = true')->getQuery();
+    $query = $this->projectRepository->createQueryBuilder('p')->where('p.published = true')->getQuery();
 
     $count = 0;
-    foreach ($query->toIterable() as $offer) {
+    foreach ($query->toIterable() as $project) {
         yield new Link(
-            $this->urlGenerator->generate('offer_get', ['slug' => $offer->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
-            $offer->getName(),
-            $offer->getTagline(),
+            $this->urlGenerator->generate('project_show', ['slug' => $project->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
+            $project->getName(),
+            $project->getSummary(),
         );
 
         // toIterable() hydrates one row at a time, but the entity manager keeps every entity it hydrated
