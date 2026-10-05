@@ -39,6 +39,7 @@
         "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0"
     },
     "suggest": {
+        "silarhi/cursor-pagination": "Reads the large Doctrine result sets of LlmsTxtPopulateEvent listeners by keyset pages, with a flat memory",
         "symfony/console": "Required for the llms-txt:dump command",
         "symfony/twig-bundle": "Required for the llms_txt_url() and llms_txt_link() Twig functions"
     },
