@@ -151,9 +151,9 @@ The document can also be changed as a whole: `setTitle()`, `setSummary()`, `setD
 ### Lots of links: generators
 
 `addLink()` keeps each link in memory until the file is rendered. For large sections, hand `addLinks()` an iterable
-instead: it is only read while the file is rendered, one link at a time, and each line is sent to the response or
-written to the file as soon as it is rendered. With a generator, the memory stays flat whatever the number of links
-(200,000 links, a 17 MB file: under 1 MB of memory, against about 100 MB when they are all held).
+instead: it is only read while the file is rendered, one link at a time, and each line goes to the buffer of the
+response or to the dumped file as soon as it is rendered. With a generator, the memory stays flat whatever the number of links
+(200,000 links, a 17 MB file: about 1 MB of memory, against about 100 MB when they are all held).
 
 ```php
 #[AsEventListener]
@@ -205,8 +205,12 @@ Only routes without mandatory parameters can carry the option: add the others fr
 
 ### On the fly
 
-With the route imported, `GET /llms.txt` builds the file on each request and streams it (`StreamedResponse`), with a
-public `Cache-Control` of `max_age` seconds.
+With the route imported, `GET /llms.txt` builds the file on each request, with a public `Cache-Control` of `max_age`
+seconds. The file is rendered whole before the response starts, into a `php://temp` buffer that spills to a temporary
+file past 256 KiB, so the memory stays flat and:
+
+- a listener failing half way gives an error page, never a truncated `200` left in the caches
+- the response carries a `Content-Length` and an `ETag`, and answers `304 Not Modified` to a matching `If-None-Match`
 
 ### Dumped
 

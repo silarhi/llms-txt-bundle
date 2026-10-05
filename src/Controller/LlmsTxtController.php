@@ -13,12 +13,18 @@ declare(strict_types=1);
 
 namespace Silarhi\LlmsTxtBundle\Controller;
 
+use RuntimeException;
 use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
 use Silarhi\LlmsTxtBundle\Service\GeneratorInterface;
 use Silarhi\LlmsTxtBundle\Service\RendererInterface;
+
+use function strlen;
+
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 /**
  * Serves the dumped file when there is one, builds it on the fly otherwise. A file dumped into the public directory
@@ -27,6 +33,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 final readonly class LlmsTxtController
 {
+    /**
+     * What php://temp keeps in memory before spilling to a temporary file.
+     */
+    private const BUFFER_MEMORY = 256 * 1024;
+
+    private const CHUNK_SIZE = 8192;
+
     public function __construct(
         private GeneratorInterface $generator,
         private RendererInterface $renderer,
@@ -36,33 +49,69 @@ final readonly class LlmsTxtController
     ) {
     }
 
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
         $path = rtrim($this->dumpDirectory, '/') . '/' . LlmsTxtBundle::FILENAME;
 
         $response = is_file($path)
             ? new BinaryFileResponse($path, autoEtag: true, autoLastModified: true)
-            : $this->stream($this->renderer->render($this->generator->generate()));
+            : $this->render();
 
         $response->headers->set('Content-Type', $this->contentType);
         $response->setPublic();
         $response->setMaxAge($this->maxAge);
 
+        // a StreamedResponse sends the output of its callback whatever its status: a 304 has no body
+        if ($response->isNotModified($request) && $response instanceof StreamedResponse) {
+            $response->setCallback(static function (): void {
+            });
+        }
+
         return $response;
     }
 
     /**
-     * Each chunk is sent as soon as it is rendered, never the whole file at once. The chunks are created here, before
-     * the response: an invalid document fails with an error page, not with a truncated 200.
-     *
-     * @param iterable<string> $chunks
+     * The whole file is rendered before the response: a listener failing half way gives an error page, never a
+     * truncated 200 left in the caches. php://temp spills to a temporary file past BUFFER_MEMORY: the memory stays
+     * flat, and the length and the ETag are known before the first byte.
      */
-    private function stream(iterable $chunks): StreamedResponse
+    private function render(): StreamedResponse
     {
-        return new StreamedResponse(static function () use ($chunks): void {
+        $chunks = $this->renderer->render($this->generator->generate());
+
+        $buffer = fopen('php://temp/maxmemory:' . self::BUFFER_MEMORY, 'w+');
+        if (false === $buffer) {
+            throw new RuntimeException('Failed to open a php://temp buffer.');
+        }
+
+        $hash = hash_init('xxh128');
+        $length = 0;
+        try {
             foreach ($chunks as $chunk) {
-                echo $chunk;
+                if (false === fwrite($buffer, $chunk)) {
+                    throw new RuntimeException('Failed to write the php://temp buffer.');
+                }
+
+                hash_update($hash, $chunk);
+                $length += strlen($chunk);
             }
+        } catch (Throwable $exception) {
+            fclose($buffer);
+
+            throw $exception;
+        }
+
+        $response = new StreamedResponse(static function () use ($buffer): void {
+            rewind($buffer);
+            // not fpassthru(): it maps the whole temporary file and writes it to the output buffers in one piece
+            while (!feof($buffer)) {
+                echo fread($buffer, self::CHUNK_SIZE);
+            }
+            fclose($buffer);
         });
+        $response->headers->set('Content-Length', (string) $length);
+        $response->setEtag(hash_final($hash));
+
+        return $response;
     }
 }

@@ -28,6 +28,7 @@ use function strlen;
 
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Links added as generators are read one at a time, from the listener to the file or the response: the memory stays
@@ -81,7 +82,7 @@ final class FlatMemoryTest extends TestCase
             return '';
         }, 8192);
         try {
-            $controller()->sendContent();
+            $controller(new Request())->sendContent();
         } finally {
             ob_end_clean();
         }
