@@ -34,7 +34,8 @@ src/
 └── LlmsTxtBundle.php   # Bundle class with configuration tree and service wiring
 config/
 └── routes.php          # GET|HEAD /llms.txt
-tests/                  # PHPUnit tests mirroring src/, Functional/ (TestKernel, FlatMemoryTest)
+tests/                  # PHPUnit tests mirroring src/, Functional/ (LlmsTxtTest, FlatMemoryTest),
+                        #   Fixtures/ (TestKernel, PopulateSubscriber, PageController)
 ```
 
 ## Build & Test Commands
@@ -130,7 +131,7 @@ interfaces, configuration options, the route option, Twig functions, the control
 2. **`CLAUDE.md`** — Repository Structure, Architecture Notes, Domain Exceptions.
 3. **PHPDoc blocks** — accurate `@param`, `@return` and `@throws` on interfaces and services.
 4. **`CHANGELOG.md`** — an entry in the top section, titled with the next release, never a bare `[Unreleased]`
-   section: the next minor (e.g. `[1.2.0] - Unreleased`), or the next major for a BC break. Follow
+   section: the next minor (e.g. `[1.3.0] - Unreleased`), or the next major for a BC break. Follow
    [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) sections (Added, Changed, Deprecated, Removed, Fixed,
    Security). When tagging the release, replace `Unreleased` with the release date and `HEAD` in its compare link with
    the tag. Prefix breaking changes with **BC break:**. Skip dependency bumps, CI and tooling changes.
