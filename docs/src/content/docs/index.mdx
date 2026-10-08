@@ -1,0 +1,43 @@
+---
+title: LLMs.txt Bundle
+description: Build, dump and serve an llms.txt file from your Symfony application.
+template: splash
+hero:
+    tagline: Build, dump and serve an <a href="https://llmstxt.org">llms.txt</a> file from your Symfony application. The PrestaSitemapBundle way — listeners fill it, a controller serves it, a command dumps it.
+    actions:
+        - text: Get started
+          link: /getting-started/installation/
+          icon: right-arrow
+        - text: View on GitHub
+          link: https://github.com/silarhi/llms-txt-bundle
+          icon: github
+          variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components'
+
+```bash
+composer require silarhi/llms-txt-bundle
+```
+
+<CardGrid>
+    <Card title="Event driven" icon="rocket">
+        Listeners of `LlmsTxtPopulateEvent` add the links, from your repositories, like `SitemapPopulateEvent`.
+    </Card>
+    <Card title="Route options" icon="setting">
+        Static pages join the file with an `llms_txt` route option, like the `sitemap` one.
+    </Card>
+    <Card title="On the fly or dumped" icon="document">
+        The controller serves the dumped file when there is one, and builds it otherwise.
+    </Card>
+    <Card title="Flat memory" icon="list-format">
+        Links added as generators are read one at a time, streamed to the response or the dumped file.
+    </Card>
+    <Card title="Spec compliant" icon="approve-check">
+        H1 title, blockquote summary, H2 sections of links, the `Optional` section always last, escaped links.
+    </Card>
+    <Card title="Discovery" icon="magnifier">
+        A `<link>` tag for the `<head>` of your pages and an opt-in `Link` header, through
+        [WebLink](https://symfony.com/doc/current/web_link.html).
+    </Card>
+</CardGrid>
