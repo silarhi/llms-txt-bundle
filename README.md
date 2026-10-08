@@ -25,6 +25,10 @@
     The <a href="https://github.com/prestaconcept/PrestaSitemapBundle">PrestaSitemapBundle</a> way: listeners fill it, a controller serves it, a command dumps it.
 </p>
 
+<p align="center">
+    📖 <a href="https://llms-txt-bundle.silarhi.dev"><strong>Documentation</strong></a>
+</p>
+
 ---
 
 ## Table of Contents
