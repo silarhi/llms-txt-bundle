@@ -146,8 +146,9 @@ final class LlmsTxtBundle extends AbstractBundle
             ->public();
 
         $services->set('llms_txt.route_options_listener', RouteOptionsListener::class)
-            ->args([service('router'), $config['route_section']])
-            ->tag('kernel.event_subscriber');
+            ->args([service('router'), $config['route_section'], service('config_cache_factory'), '%kernel.build_dir%'])
+            ->tag('kernel.event_subscriber')
+            ->tag('kernel.cache_warmer');
 
         if ($config['discovery']['link_header']) {
             $services->set('llms_txt.discovery_link_listener', DiscoveryLinkListener::class)

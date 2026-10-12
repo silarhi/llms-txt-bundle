@@ -88,6 +88,11 @@ composer normalize
   `StreamedResponse` runs its callback even on a 304: the controller swaps it for a no-op then.
 - **Dumper** writes the chunks to a temporary file next to the target and renames it: atomic, and the previous file
   stays when a listener fails.
+- **Route options are cached.** `RouteOptionsListener` loads the route collection (every attribute, YAML or XML route
+  file: the router does not keep it in production) only to build `%kernel.build_dir%/llms_txt_routes.php`, a
+  `ConfigCache` tracking the collection's resources like the router's own cache. It is also an optional cache warmer.
+  URLs are still generated per request (they depend on the request context). Without the cache factory and directory
+  (the 2-argument constructor), or when the file cannot be written, it reads the collection as before.
 - **Discovery** goes through WebLink: `DiscoveryLinkListener` (priority 8) adds a link to the request's `_links`, which
   WebLink's `AddLinkHeaderListener` (priority 0) serializes with the other links. Only successful HTML main requests
   (not XHR, Turbo Frames, redirects, errors, other formats).

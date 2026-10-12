@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Generating the file no longer loads the application's whole route collection on every request: the routes carrying the `llms_txt` option are cached in `%kernel.build_dir%/llms_txt_routes.php`, next to the compiled routes and invalidated with them (a route file change rebuilds it in debug). `cache:warmup` writes it, so a read-only build directory works. With 1,000 attribute routes carrying the option, `/llms.txt` is generated 9 times faster when not dumped (15.9 ms to 1.8 ms), 38 times with 10,000 (720 ms to 19 ms). An invalid option still fails the requests of the file, not the warmup.
 - `symfony/web-link` is an optional dependency: only the `Link` header of `discovery.link_header` (off by default) needs it. Run `composer require symfony/web-link` if you enable that option, or if your application uses WebLink itself (the `preload()` or `link()` Twig functions, `AbstractController::addLink()`…) without requiring it: it no longer comes with the bundle. Enabling `link_header` without it fails when the container builds.
 
 ## [1.2.0] - 2026-10-05
