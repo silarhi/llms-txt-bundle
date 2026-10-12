@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - Unreleased
+
+### Changed
+
+- `symfony/web-link` is an optional dependency: only the `Link` header of `discovery.link_header` (off by default) needs it. Run `composer require symfony/web-link` if you enable that option, or if your application uses WebLink itself (the `preload()` or `link()` Twig functions, `AbstractController::addLink()`…) without requiring it: it no longer comes with the bundle. Enabling `link_header` without it fails when the container builds.
+
 ## [1.2.0] - 2026-10-05
 
 ### Added
@@ -38,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Document::addLinks()` takes an iterable read only while the file is rendered: with a generator, the memory stays flat whatever the number of links.
 - Discovery: the `llms_txt_link()` and `llms_txt_url()` Twig functions, and an opt-in `Link` header on HTML pages through WebLink (`discovery.link_header`).
 
+[1.3.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.2.0...HEAD
 [1.2.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/silarhi/llms-txt-bundle/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.0.0...v1.1.0

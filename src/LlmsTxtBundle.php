@@ -93,7 +93,7 @@ final class LlmsTxtBundle extends AbstractBundle
                     ->children()
                         ->booleanNode('link_header')
                             ->defaultFalse()
-                            ->info('Adds the file to the Link header of the HTML pages, through WebLink ("framework.web_link").')
+                            ->info('Adds the file to the Link header of the HTML pages, through WebLink: needs symfony/web-link and "framework.web_link".')
                         ->end()
                         ->scalarNode('rel')
                             ->defaultValue('llms-txt')

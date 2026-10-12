@@ -60,7 +60,8 @@
 
 - PHP 8.2+
 - Symfony 6.4, 7.x or 8.x
-- `symfony/console` for the `llms-txt:dump` command, `symfony/twig-bundle` for the Twig functions
+- `symfony/console` for the `llms-txt:dump` command, `symfony/twig-bundle` for the Twig functions, `symfony/web-link`
+  for the `Link` header (`discovery.link_header`)
 
 ## Installation
 
@@ -107,7 +108,7 @@ llms_txt:
     # Cache-Control max-age of the controller responses, in seconds
     max_age: 3600
     discovery:
-        # Adds the file to the Link header of the HTML pages, through WebLink
+        # Adds the file to the Link header of the HTML pages, through WebLink (composer require symfony/web-link)
         link_header: false
         # The relation of the Link header and of the llms_txt_link() tag
         rel: 'llms-txt'
@@ -295,7 +296,8 @@ llms_txt:
 
 `link_header` goes through [WebLink](https://symfony.com/doc/current/web_link.html): the link joins the `_links` of
 the request, and WebLink writes them all in one `Link` header, next to your `preload()` and `preconnect()` ones. It
-needs `framework.web_link`, enabled by default when `symfony/web-link` is installed (a dependency of the bundle). The
+needs `symfony/web-link`, an optional dependency (`composer require symfony/web-link`), and `framework.web_link`,
+enabled by default once it is installed: the container fails to build otherwise. The
 header is added to successful HTML responses of main requests only: not to sub-requests, Turbo Frames, XHR, redirects,
 errors, JSON or the `llms.txt` file itself.
 
