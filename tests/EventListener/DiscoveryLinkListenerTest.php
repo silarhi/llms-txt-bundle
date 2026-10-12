@@ -15,6 +15,7 @@ namespace Silarhi\LlmsTxtBundle\Tests\EventListener;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Link\LinkProviderInterface;
 use Silarhi\LlmsTxtBundle\EventListener\DiscoveryLinkListener;
 use Silarhi\LlmsTxtBundle\Service\UrlGenerator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -64,6 +65,28 @@ final class DiscoveryLinkListenerTest extends TestCase
         $response = $this->dispatch($request, new Response('<html></html>', headers: ['Content-Type' => 'text/html']));
 
         self::assertSame(['</app.css>; rel="preload"; as="style",' . self::HEADER], $response->headers->all('link'));
+    }
+
+    public function testLeavesALinkProviderWhichCannotEvolve(): void
+    {
+        $links = new class implements LinkProviderInterface {
+            public function getLinks(): iterable
+            {
+                return [];
+            }
+
+            public function getLinksByRel(string $rel): iterable
+            {
+                return [];
+            }
+        };
+        $request = Request::create('/');
+        $request->attributes->set('_links', $links);
+
+        $response = $this->dispatch($request, new Response('<html></html>', headers: ['Content-Type' => 'text/html']));
+
+        self::assertSame($links, $request->attributes->get('_links'));
+        self::assertFalse($response->headers->has('Link'));
     }
 
     /**

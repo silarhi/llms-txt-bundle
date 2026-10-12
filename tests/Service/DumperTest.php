@@ -14,13 +14,16 @@ declare(strict_types=1);
 namespace Silarhi\LlmsTxtBundle\Tests\Service;
 
 use Override;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Silarhi\LlmsTxtBundle\Event\LlmsTxtPopulateEvent;
 use Silarhi\LlmsTxtBundle\Exception\MissingTitleException;
 use Silarhi\LlmsTxtBundle\Service\Dumper;
 use Silarhi\LlmsTxtBundle\Service\Generator;
 use Silarhi\LlmsTxtBundle\Service\MarkdownRenderer;
+use Silarhi\LlmsTxtBundle\Tests\Fixtures\FailingStreamWrapper;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 
 final class DumperTest extends TestCase
@@ -71,6 +74,32 @@ final class DumperTest extends TestCase
         }
 
         self::assertSame("# Example\n", file_get_contents($this->directory . '/llms.txt'));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideFailingFilesystems(): iterable
+    {
+        yield 'open' => [FailingStreamWrapper::OPEN, 'Failed to open'];
+        yield 'write' => [FailingStreamWrapper::WRITE, 'Failed to write'];
+    }
+
+    #[DataProvider('provideFailingFilesystems')]
+    public function testFailsWhenTheTemporaryFileCannotBeWritten(string $scheme, string $message): void
+    {
+        FailingStreamWrapper::register();
+        // the warning of fopen() is left to the application: the exception is the guard of the dumper
+        set_error_handler(static fn (): bool => true, \E_WARNING);
+        try {
+            $this->expectException(IOException::class);
+            $this->expectExceptionMessage($message);
+
+            $this->createDumper(new EventDispatcher(), 'Example')->dump($scheme . '://public');
+        } finally {
+            restore_error_handler();
+            FailingStreamWrapper::unregister();
+        }
     }
 
     private function createDumper(EventDispatcher $dispatcher, ?string $title): Dumper
