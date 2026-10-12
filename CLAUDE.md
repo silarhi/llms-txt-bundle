@@ -133,7 +133,8 @@ All implement `LlmsTxtExceptionInterface`.
 **Always update documentation when adding or modifying public API**: the event, the models, the services and their
 interfaces, configuration options, the route option, Twig functions, the controller route.
 
-1. **`README.md`** — usage examples, configuration reference, feature descriptions.
+1. **`docs/`** — the documentation site (llms-txt-bundle.silarhi.dev): usage guides, configuration reference. Keep
+   `README.md` short: update its features list or quick start only when they change.
 2. **`CLAUDE.md`** — Repository Structure, Architecture Notes, Domain Exceptions.
 3. **PHPDoc blocks** — accurate `@param`, `@return` and `@throws` on interfaces and services.
 4. **`CHANGELOG.md`** — an entry in the top section, titled with the next release, never a bare `[Unreleased]`
