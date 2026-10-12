@@ -27,7 +27,7 @@ final class WebLinkPass implements CompilerPassInterface
     public function process(ContainerBuilder $container): void
     {
         if ($container->hasDefinition('llms_txt.discovery_link_listener') && !$container->has('web_link.add_link_header_listener')) {
-            throw new LogicException('The "llms_txt.discovery.link_header" option needs WebLink: enable "framework.web_link".');
+            throw new LogicException('The "llms_txt.discovery.link_header" option needs WebLink: run "composer require symfony/web-link" and enable "framework.web_link".');
         }
     }
 }

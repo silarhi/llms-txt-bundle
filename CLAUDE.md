@@ -11,8 +11,9 @@ and a command dumps it.
 ## Tech Stack
 
 - **Language**: PHP 8.2+
-- **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/framework-bundle`, `symfony/web-link`)
-- **Optional**: `symfony/console` (`llms-txt:dump`), `symfony/twig-bundle` (`llms_txt_url()`, `llms_txt_link()`)
+- **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/framework-bundle`)
+- **Optional**: `symfony/console` (`llms-txt:dump`), `symfony/twig-bundle` (`llms_txt_url()`, `llms_txt_link()`),
+  `symfony/web-link` (`discovery.link_header`)
 
 ## Repository Structure
 
@@ -21,7 +22,7 @@ src/
 ├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url])
 ├── Controller/         # LlmsTxtController: serves the dumped file, or renders it whole into a php://temp buffer
 │                       #   (Content-Length, ETag, 304) before responding
-├── DependencyInjection/ # WebLinkPass: discovery.link_header needs framework.web_link
+├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link
 ├── Event/              # LlmsTxtPopulateEvent
 ├── EventListener/      # RouteOptionsListener (the "llms_txt" route option),
 │                       #   DiscoveryLinkListener (Link header of HTML pages, through WebLink's "_links")
