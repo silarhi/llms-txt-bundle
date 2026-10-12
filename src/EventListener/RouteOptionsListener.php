@@ -18,12 +18,17 @@ use function is_array;
 use Override;
 use Silarhi\LlmsTxtBundle\Event\LlmsTxtPopulateEvent;
 use Silarhi\LlmsTxtBundle\Exception\InvalidRouteOptionException;
+use Silarhi\LlmsTxtBundle\Exception\LlmsTxtExceptionInterface;
 use Silarhi\LlmsTxtBundle\Model\Link;
 use Silarhi\LlmsTxtBundle\Routing\LlmsTxtEntry;
 
 use function sprintf;
 
+use Symfony\Component\Config\ConfigCacheFactoryInterface;
+use Symfony\Component\Config\ConfigCacheInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
+use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\Routing\Exception\MissingMandatoryParametersException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
@@ -35,13 +40,15 @@ use Symfony\Component\Routing\RouterInterface;
  *
  * The option can also be an array, {title: …, description: …, section: …}, for the routes YAML or XML declare.
  */
-final readonly class RouteOptionsListener implements EventSubscriberInterface
+final readonly class RouteOptionsListener implements EventSubscriberInterface, CacheWarmerInterface
 {
     public const OPTION = 'llms_txt';
 
     public function __construct(
         private RouterInterface $router,
         private string $defaultSection,
+        private ?ConfigCacheFactoryInterface $configCacheFactory = null,
+        private ?string $cacheDir = null,
     ) {
     }
 
@@ -52,8 +59,70 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface
         return [LlmsTxtPopulateEvent::class => ['populate', 128]];
     }
 
+    #[Override]
+    public function isOptional(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Writes the cache of the route options with the compiled routes: a read-only build directory works too.
+     *
+     * @return list<string>
+     */
+    #[Override]
+    public function warmUp(string $cacheDir, ?string $buildDir = null): array
+    {
+        try {
+            $this->getEntries($buildDir ?? $cacheDir);
+        } catch (LlmsTxtExceptionInterface) {
+            // an invalid option fails the requests of the file, as without the cache, not the deployment
+        }
+
+        return [];
+    }
+
     public function populate(LlmsTxtPopulateEvent $event): void
     {
+        $document = $event->getDocument();
+        foreach ($this->getEntries($this->cacheDir) as [$name, $title, $description, $section]) {
+            $document->section($section ?? $this->defaultSection)->addLink(new Link($this->generateUrl($name), $title, $description));
+        }
+    }
+
+    /**
+     * The routes carrying the option, cached next to the compiled routes like the router does: loading the route
+     * collection (every attribute, YAML or XML file of the application) costs far more than the file itself.
+     *
+     * @return list<array{string, string, string|null, string|null}> name, title, description, section
+     */
+    private function getEntries(?string $cacheDir): array
+    {
+        if (!$this->configCacheFactory instanceof ConfigCacheFactoryInterface || null === $cacheDir) {
+            return $this->collectEntries();
+        }
+
+        try {
+            $cache = $this->configCacheFactory->cache($cacheDir . '/llms_txt_routes.php', function (ConfigCacheInterface $cache): void {
+                $collection = $this->router->getRouteCollection();
+                $cache->write('<?php return ' . var_export($this->collectEntries(), true) . ';' . "\n", $collection->getResources());
+            });
+        } catch (IOExceptionInterface) {
+            return $this->collectEntries();
+        }
+
+        /** @var list<array{string, string, string|null, string|null}> $entries */
+        $entries = require $cache->getPath();
+
+        return $entries;
+    }
+
+    /**
+     * @return list<array{string, string, string|null, string|null}>
+     */
+    private function collectEntries(): array
+    {
+        $entries = [];
         foreach ($this->router->getRouteCollection()->all() as $name => $route) {
             $option = $route->getOption(self::OPTION);
             if (null === $option || false === $option) {
@@ -61,10 +130,10 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface
             }
 
             $entry = $this->createEntry($name, $option);
-            $link = new Link($this->generateUrl($name), $entry->title, $entry->description);
-
-            $event->getDocument()->section($entry->section ?? $this->defaultSection)->addLink($link);
+            $entries[] = [$name, $entry->title, $entry->description, $entry->section];
         }
+
+        return $entries;
     }
 
     private function createEntry(string $route, mixed $option): LlmsTxtEntry
