@@ -36,7 +36,8 @@ src/
 config/
 └── routes.php          # GET|HEAD /llms.txt
 tests/                  # PHPUnit tests mirroring src/, Functional/ (LlmsTxtTest, FlatMemoryTest),
-                        #   Fixtures/ (TestKernel, PopulateSubscriber, PageController)
+                        #   Fixtures/ (TestKernel, PopulateSubscriber, PageController,
+                        #   FailingStreamWrapper, templates/)
 ```
 
 ## Build & Test Commands
@@ -76,6 +77,8 @@ composer normalize
 - Additional check (`.laminas-ci.json`): `composer validate --strict && composer normalize --dry-run --diff` on lowest PHP with latest dependencies
 - The `main` ruleset requires the `CI passed` job; coverage is published to the `badges` branch
 - Runs on: `ubuntu-latest`
+- Documentation site (`.github/workflows/docs.yml`): the reusable `silarhi/docs-kit` workflow builds `docs/` when it
+  changes (pull requests and `main`), with GitHub Pages permissions to deploy it from `main`
 
 ## Architecture Notes
 

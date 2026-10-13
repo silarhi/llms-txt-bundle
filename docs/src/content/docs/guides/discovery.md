@@ -32,8 +32,9 @@ llms_txt:
 
 `link_header` goes through [WebLink](https://symfony.com/doc/current/web_link.html): the link joins the `_links` of
 the request, and WebLink writes them all in one `Link` header, next to your `preload()` and `preconnect()` ones. It
-needs `framework.web_link`, enabled by default when `symfony/web-link` is installed (a dependency of the bundle). The
-header is added to successful HTML responses of main requests only: not to sub-requests, Turbo Frames, XHR, redirects,
+needs `framework.web_link`, enabled by default when `symfony/web-link` is installed. The bundle does not require it:
+run `composer require symfony/web-link` before enabling `link_header`, or the container fails to build. The `link()`
+Twig function of the first example comes from WebLink too. The header is added to successful HTML responses of main requests only: not to sub-requests, Turbo Frames, XHR, redirects,
 errors, JSON or the `llms.txt` file itself.
 
 `llms_txt_url()` returns the absolute URL alone. Both use the route of the bundle when it is imported, and `/llms.txt`

@@ -23,6 +23,10 @@ composer require silarhi/cursor-pagination
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Pagination\CursorPagination;
+use Silarhi\LlmsTxtBundle\Event\LlmsTxtPopulateEvent;
+use Silarhi\LlmsTxtBundle\Model\Link;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[AsEventListener]
 public function __invoke(LlmsTxtPopulateEvent $event): void

@@ -8,13 +8,12 @@ sidebar:
 ```yaml
 # config/packages/llms_txt.yaml
 llms_txt:
-    # The H1 of the file, the name of the site (required, unless a listener sets it)
-    title: 'SILARHI'
-    # A short summary, rendered as a blockquote
-    summary: 'Agence de développement Web PHP à Toulouse : applications Web et mobiles sur mesure, de la conception à la maintenance.'
+    # The H1 of the file, the name of the site (required, unless a listener sets it), e.g. 'SILARHI'
+    title: null
+    # A short summary, rendered as a blockquote, e.g. 'Agence de développement Web PHP à Toulouse.'
+    summary: null
     # Free Markdown rendered after the summary: paragraphs, lists, anything but headings
-    details: |
-        Devis rapide et gratuit, interventions à Toulouse et partout en France.
+    details: null
     # The section of the routes carrying an "llms_txt" option without one of their own
     route_section: 'Pages'
     # Where llms-txt:dump writes the file, and where the controller looks for it first
@@ -24,7 +23,7 @@ llms_txt:
     # Cache-Control max-age of the controller responses, in seconds
     max_age: 3600
     discovery:
-        # Adds the file to the Link header of the HTML pages, through WebLink
+        # Adds the file to the Link header of the HTML pages, through WebLink: needs symfony/web-link
         link_header: false
         # The relation of the Link header and of the llms_txt_link() tag
         rel: 'llms-txt'
