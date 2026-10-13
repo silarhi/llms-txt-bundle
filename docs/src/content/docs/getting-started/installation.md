@@ -9,7 +9,8 @@ sidebar:
 
 - PHP 8.2+
 - Symfony 6.4, 7.x or 8.x
-- `symfony/console` for the `llms-txt:dump` command, `symfony/twig-bundle` for the Twig functions
+- `symfony/console` for the `llms-txt:dump` command, `symfony/twig-bundle` for the Twig functions, `symfony/web-link`
+  for the `Link` header of `discovery.link_header`
 
 ## Installation
 

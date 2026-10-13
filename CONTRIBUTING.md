@@ -12,7 +12,8 @@ yarn install # Git hooks: lint-staged formats the staged files on commit
 
 ## Quality checks
 
-The CI runs them all, on every supported PHP and Symfony version:
+The CI runs PHPUnit on every supported PHP version, with the lowest and the latest dependencies, and PHPStan, PHP CS
+Fixer and the `composer.json` checks once. It does not run Rector: run it locally before opening a pull request.
 
 ```bash
 # Tests
