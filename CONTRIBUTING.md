@@ -7,7 +7,7 @@ Contributions are welcome! Bug reports and feature requests go to the
 
 ```bash
 composer install
-yarn install # Git hooks: lint-staged formats the staged files on commit
+pnpm install # Git hooks: lint-staged formats the staged files on commit
 ```
 
 ## Quality checks
@@ -40,8 +40,8 @@ The documentation site, [llms-txt-bundle.silarhi.dev](https://llms-txt-bundle.si
 
 ```bash
 cd docs
-yarn install
-yarn dev # http://localhost:4321
+pnpm install
+pnpm dev # http://localhost:4321
 ```
 
 Pull requests touching `docs/` build the site; it is published once merged into `main`.
