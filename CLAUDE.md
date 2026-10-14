@@ -79,6 +79,7 @@ composer normalize
 - Runs on: `ubuntu-latest`
 - Documentation site (`.github/workflows/docs.yml`): the reusable `silarhi/docs-kit` workflow builds `docs/` when it
   changes (pull requests and `main`), with GitHub Pages permissions to deploy it from `main`
+- pnpm is the package manager (root for the git hooks, `docs/` for the site, each with its own lockfile): its version is pinned by `packageManager` in `package.json`, and `pnpm-workspace.yaml` lists the dependencies allowed to run install scripts (`allowBuilds`; pnpm fails the install on a new unlisted one).
 
 ## Architecture Notes
 
