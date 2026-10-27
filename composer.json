@@ -19,6 +19,12 @@
             "email": "guillaume@silarhi.fr"
         }
     ],
+    "homepage": "https://llms-txt-bundle.silarhi.dev",
+    "support": {
+        "issues": "https://github.com/silarhi/llms-txt-bundle/issues",
+        "source": "https://github.com/silarhi/llms-txt-bundle",
+        "docs": "https://llms-txt-bundle.silarhi.dev"
+    },
     "require": {
         "php": ">=8.2",
         "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0"
