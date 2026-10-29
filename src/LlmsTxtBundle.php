@@ -91,21 +91,6 @@ final class LlmsTxtBundle extends AbstractBundle
                     ->min(0)
                     ->info('The Cache-Control max-age of the controller responses, in seconds.')
                 ->end()
-                ->arrayNode('cache')
-                    ->addDefaultsIfNotSet()
-                    ->children()
-                        ->scalarNode('pool')
-                            ->defaultValue('cache.app')
-                            ->cannotBeEmpty()
-                            ->info('The cache pool keeping the file built on the fly, one entry per base URL.')
-                        ->end()
-                        ->integerNode('ttl')
-                            ->defaultValue(300)
-                            ->min(0)
-                            ->info('How long the file built on the fly is cached, in seconds: 0 builds it on each request.')
-                        ->end()
-                    ->end()
-                ->end()
                 ->arrayNode('discovery')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -134,7 +119,6 @@ final class LlmsTxtBundle extends AbstractBundle
          *     dump_directory: string,
          *     content_type: string,
          *     max_age: int,
-         *     cache: array{pool: string, ttl: int},
          *     discovery: array{link_header: bool, rel: string},
          * } $config */
         $services = $container->services();
@@ -165,8 +149,6 @@ final class LlmsTxtBundle extends AbstractBundle
                 $config['content_type'],
                 $config['max_age'],
                 service('llms_txt.default_uri_context'),
-                service($config['cache']['pool']),
-                $config['cache']['ttl'],
             ])
             ->tag('controller.service_arguments')
             ->public();

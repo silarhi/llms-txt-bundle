@@ -21,7 +21,7 @@ and a command dumps it.
 src/
 ├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url])
 ├── Controller/         # LlmsTxtController: serves the dumped file, or renders it whole into a php://temp buffer
-│                       #   (Content-Length, ETag, 304) before responding, cached in a pool (cache.pool, cache.ttl)
+│                       #   (Content-Length, ETag, 304) before responding
 ├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link,
 │                       #   DefaultUriPass: hands framework.router.default_uri to DefaultUriContext
 ├── Event/              # LlmsTxtPopulateEvent
@@ -92,10 +92,8 @@ composer normalize
   before creating the response, so a listener failing half way is an error page. It sends the buffer with an
   `fread()` loop, not `fpassthru()`, which maps the whole temporary file into the output buffers. A
   `StreamedResponse` runs its callback even on a 304: the controller swaps it for a no-op then.
-- **Cached on the fly.** The controller keeps the rendered file `cache.ttl` seconds in `cache.pool`, keyed on the
-  base URL (`default_uri`, or the scheme, host and base URL of the request), and answers the 304 from it. Past 1 MiB
-  it is not cached: a hit would hold it whole in memory, against the flat memory rule. The cache callback returns
-  null with `$save = false` then, and the controller streams the buffer it rendered.
+- **No application cache, no lock.** Built on the fly, the file runs every listener on each request: production sites
+  dump it from a cron (`llms-txt:dump`), which the docs push. Keep the controller a fallback, not a cache layer.
 - **Host of the URLs.** During a request, RouterListener fills the router's `RequestContext` from the request (Host,
   X-Forwarded-Host). `DefaultUriContext::apply()` swaps in the scheme, host, ports and base URL of
   `default_uri` and restores them afterwards. `DefaultUriPass` copies it from the first argument of

@@ -22,11 +22,6 @@ llms_txt:
     content_type: 'text/plain; charset=UTF-8'
     # Cache-Control max-age of the controller responses, in seconds
     max_age: 3600
-    cache:
-        # The cache pool keeping the file built on the fly, one entry per base URL
-        pool: 'cache.app'
-        # How long the file built on the fly is cached, in seconds: 0 builds it on each request
-        ttl: 300
     discovery:
         # Adds the file to the Link header of the HTML pages, through WebLink: needs symfony/web-link
         link_header: false

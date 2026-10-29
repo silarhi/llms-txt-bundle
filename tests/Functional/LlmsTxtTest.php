@@ -14,8 +14,6 @@ declare(strict_types=1);
 namespace Silarhi\LlmsTxtBundle\Tests\Functional;
 
 use Override;
-use Psr\Cache\CacheItemPoolInterface;
-use Silarhi\LlmsTxtBundle\Tests\Fixtures\PopulateSubscriber;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -47,10 +45,6 @@ final class LlmsTxtTest extends WebTestCase
     protected function setUp(): void
     {
         (new Filesystem())->remove(self::bootKernel()->getCacheDir() . '/llms_txt');
-        // the file built on the fly is cached in cache.app, which outlives the kernel
-        $cache = self::getContainer()->get('cache.app');
-        self::assertInstanceOf(CacheItemPoolInterface::class, $cache);
-        $cache->clear();
         self::ensureKernelShutdown();
     }
 
@@ -76,26 +70,6 @@ final class LlmsTxtTest extends WebTestCase
         $client->request('GET', 'https://forged.example.net/contact');
         self::assertResponseHeaderSame('Link', '<https://example.com/llms.txt>; rel="llms-txt"');
         self::assertSelectorExists('head link[rel="llms-txt"][href="https://example.com/llms.txt"]');
-    }
-
-    public function testServesTheFileFromTheCache(): void
-    {
-        $client = self::createClient();
-        // one kernel for all the requests, to count the calls of its subscriber
-        $client->disableReboot();
-        $client->request('GET', 'https://example.com/llms.txt');
-        $etag = $client->getInternalResponse()->getHeader('ETag');
-        self::assertIsString($etag);
-
-        $subscriber = self::getContainer()->get(PopulateSubscriber::class);
-        self::assertInstanceOf(PopulateSubscriber::class, $subscriber);
-        $calls = $subscriber->calls;
-
-        $client->request('GET', 'https://example.com/llms.txt?x=random');
-        self::assertSame(self::EXPECTED, $client->getInternalResponse()->getContent());
-        $client->request('GET', 'https://example.com/llms.txt', server: ['HTTP_IF_NONE_MATCH' => $etag]);
-        self::assertResponseStatusCodeSame(304);
-        self::assertSame($calls, $subscriber->calls);
     }
 
     public function testDumpsTheFileThenServesIt(): void

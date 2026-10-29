@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.0] - Unreleased
 
-### Added
-
-- The `cache.pool` (`cache.app`) and `cache.ttl` (300 seconds, 0 to disable) options: the file built on the fly is cached, one entry per base URL. The listeners no longer run on every request: a `304 Not Modified` is answered from the cache, and a `?random` query string past the HTTP caches no longer rebuilds the file. A file larger than 1 MiB is not cached, to keep the memory flat: dump it.
-
 ### Security
 
 - The absolute URLs of the file (the `llms_txt` route option, and those `LlmsTxtPopulateEvent` listeners generate with the router), of `llms_txt_url()`, `llms_txt_link()` and of the discovery `Link` header come from `framework.router.default_uri` when it is set, not from the request: a forged `Host` (or `X-Forwarded-Host`) header no longer ends up in the publicly cached file. Without `default_uri`, or with the `http://localhost` placeholder of the Symfony recipe, they keep the host of the request: set `framework.trusted_hosts` then.

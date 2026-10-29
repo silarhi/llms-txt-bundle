@@ -14,11 +14,8 @@ With the route imported, `GET /llms.txt` builds the file when it is not dumped, 
 - a listener failing half way gives an error page, never a truncated `200` left in the caches
 - the response carries a `Content-Length` and an `ETag`, and answers `304 Not Modified` to a matching `If-None-Match`
 
-The built file is kept `cache.ttl` seconds (300 by default) in the `cache.pool` pool (`cache.app` by default), one
-entry per base URL: the listeners run once per period, not on each request, a `304` or a `?random` query string
-included. A file larger than 1 MiB stays out of the cache (a hit would hold it whole in memory) and is built on each
-request: dump it instead. To see a change before the end of the period, clear the pool
-(`php bin/console cache:pool:clear cache.app`) or set `cache.ttl: 0`.
+Every request reaching the controller runs all the listeners, a `304` or a `?random` query string past the HTTP caches
+included. That suits development and small sites; in production, [dump the file](#dumped) from a cron.
 
 ## The host of the URLs
 
@@ -39,6 +36,13 @@ behind a trusted proxy whose cache ignores it) would leave its host in the cache
 then, to the hosts of the site.
 
 ## Dumped
+
+In production, dump the file from a cron, and after each deployment:
+
+```bash
+# crontab: every hour
+0 * * * * cd /var/www/app && php bin/console llms-txt:dump
+```
 
 ```bash
 php bin/console llms-txt:dump
