@@ -20,20 +20,10 @@ included. That suits development and small sites; in production, [dump the file]
 ## The host of the URLs
 
 The absolute URLs of the file, those of the `llms_txt` route option and those your listeners generate with the router,
-come from `framework.router.default_uri` when it is set, whatever the `Host` of the request:
-
-```yaml
-# config/packages/routing.yaml
-framework:
-    router:
-        default_uri: '%env(DEFAULT_URI)%' # e.g. https://example.com
-```
-
-Without it (or with `http://localhost`, the placeholder of the Symfony recipe), they keep the host of the request, like
-any URL Symfony generates. The file is publicly cached: a request with a forged `Host` header (or `X-Forwarded-Host`
-behind a trusted proxy whose cache ignores it) would leave its host in the cached file. Set
-[`framework.trusted_hosts`](https://symfony.com/doc/current/reference/configuration/framework.html#trusted-hosts)
-then, to the hosts of the site.
+come from the request, like any URL Symfony generates. The file is publicly cached: set
+[`framework.trusted_hosts`](https://symfony.com/doc/current/reference/configuration/framework.html#trusted-hosts) to the
+hosts of the site, so that a request with a forged `Host` header gets an error instead of leaving its host in the cached
+file.
 
 ## Dumped
 

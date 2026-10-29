@@ -22,15 +22,13 @@ src/
 ├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url])
 ├── Controller/         # LlmsTxtController: serves the dumped file, or renders it whole into a php://temp buffer
 │                       #   (Content-Length, ETag, 304) before responding
-├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link,
-│                       #   DefaultUriPass: hands framework.router.default_uri to DefaultUriContext
+├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link
 ├── Event/              # LlmsTxtPopulateEvent
 ├── EventListener/      # RouteOptionsListener (the "llms_txt" route option),
 │                       #   DiscoveryLinkListener (Link header of HTML pages, through WebLink's "_links")
 ├── Exception/          # LlmsTxtExceptionInterface and implementations
 ├── Model/              # Document, Section (links or lazy iterables of links), Link
-├── Routing/            # LlmsTxtEntry: the "llms_txt" route option as an object (fromArray() for YAML/XML routes),
-│                       #   DefaultUriContext (URLs from framework.router.default_uri during a request)
+├── Routing/            # LlmsTxtEntry: the "llms_txt" route option as an object (fromArray() for YAML/XML routes)
 ├── Service/            # Generator (+ interface), MarkdownRenderer (+ RendererInterface), Dumper (+ interface),
 │                       #   UrlGenerator (absolute URL of the file, for discovery)
 ├── Twig/               # LlmsTxtExtension (llms_txt_url, llms_txt_link)
@@ -93,15 +91,8 @@ composer normalize
   `fread()` loop, not `fpassthru()`, which maps the whole temporary file into the output buffers. A
   `StreamedResponse` runs its callback even on a 304: the controller swaps it for a no-op then.
 - **No application cache, no lock.** Built on the fly, the file runs every listener on each request: production sites
-  dump it from a cron (`llms-txt:dump`), which the docs push. Keep the controller a fallback, not a cache layer.
-- **Host of the URLs.** During a request, RouterListener fills the router's `RequestContext` from the request (Host,
-  X-Forwarded-Host). `DefaultUriContext::apply()` swaps in the scheme, host, ports and base URL of
-  `default_uri` and restores them afterwards. `DefaultUriPass` copies it from the first argument of
-  `router.request_context`: FrameworkBundle 6.4.0 writes it there, later versions pass the
-  `router.request_context.base_url` parameter. The
-  controller wraps the whole rendering in it, so the listeners' URLs (generated while the chunks are read) follow
-  too; `UrlGenerator` (discovery) as well. Not configured: empty, no host, or the recipe's `http://localhost`. No
-  main request (commands, workers): no-op, so `llms-txt:dump --base-url` keeps working.
+  dump it from a cron (`llms-txt:dump`), which the docs push. URLs come from the request context: the bundle relies on
+  `framework.trusted_hosts` against forged `Host` headers, it does not override the host.
 - **Dumper** writes the chunks to a temporary file next to the target and renames it: atomic, and the previous file
   stays when a listener fails.
 - **Route options are cached.** `RouteOptionsListener` loads the route collection (every attribute, YAML or XML route

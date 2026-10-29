@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- The absolute URLs of the file (the `llms_txt` route option, and those `LlmsTxtPopulateEvent` listeners generate with the router), of `llms_txt_url()`, `llms_txt_link()` and of the discovery `Link` header come from `framework.router.default_uri` when it is set, not from the request: a forged `Host` (or `X-Forwarded-Host`) header no longer ends up in the publicly cached file. Without `default_uri`, or with the `http://localhost` placeholder of the Symfony recipe, they keep the host of the request: set `framework.trusted_hosts` then.
 - The `/llms.txt` responses carry `X-Content-Type-Options: nosniff`.
 
 ## [1.3.0] - 2026-10-12

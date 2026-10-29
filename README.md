@@ -75,8 +75,7 @@ use Silarhi\LlmsTxtBundle\Routing\LlmsTxtEntry;
 public function contact(): Response
 ```
 
-`GET /llms.txt` now lists the contact page. Set `framework.router.default_uri` (or `framework.trusted_hosts`) in
-production: the URLs of the file come from it, not from the `Host` header of the request. Add the pages of your database from
+`GET /llms.txt` now lists the contact page. Add the pages of your database from
 [an event listener](https://llms-txt-bundle.silarhi.dev/guides/event-listener/), or dump the file with
 `php bin/console llms-txt:dump`.
 

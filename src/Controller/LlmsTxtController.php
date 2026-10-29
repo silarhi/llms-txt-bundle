@@ -15,7 +15,6 @@ namespace Silarhi\LlmsTxtBundle\Controller;
 
 use RuntimeException;
 use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
-use Silarhi\LlmsTxtBundle\Routing\DefaultUriContext;
 use Silarhi\LlmsTxtBundle\Service\GeneratorInterface;
 use Silarhi\LlmsTxtBundle\Service\RendererInterface;
 
@@ -48,7 +47,6 @@ final readonly class LlmsTxtController
         private string $dumpDirectory,
         private string $contentType,
         private int $maxAge,
-        private ?DefaultUriContext $defaultUriContext = null,
     ) {
     }
 
@@ -58,7 +56,7 @@ final readonly class LlmsTxtController
 
         $response = is_file($path)
             ? new BinaryFileResponse($path, autoEtag: true, autoLastModified: true)
-            : $this->build();
+            : $this->render();
 
         $response->headers->set('Content-Type', $this->contentType);
         $response->headers->set('X-Content-Type-Options', 'nosniff');
@@ -79,12 +77,6 @@ final readonly class LlmsTxtController
      * truncated 200 left in the caches. php://temp spills to a temporary file past BUFFER_MEMORY: the memory stays
      * flat, and the length and the ETag are known before the first byte.
      */
-    private function build(): StreamedResponse
-    {
-        // the URLs of the listeners too come from "default_uri": they are generated while the chunks are read
-        return $this->defaultUriContext instanceof DefaultUriContext ? $this->defaultUriContext->apply($this->render(...)) : $this->render();
-    }
-
     private function render(): StreamedResponse
     {
         $chunks = $this->renderer->render($this->generator->generate());

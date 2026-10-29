@@ -59,19 +59,6 @@ final class LlmsTxtTest extends WebTestCase
         self::assertSame(self::EXPECTED, $client->getInternalResponse()->getContent());
     }
 
-    public function testUsesTheDefaultUriWhateverTheHostOfTheRequest(): void
-    {
-        $client = self::createClient();
-        $client->request('GET', 'https://forged.example.net/llms.txt');
-
-        self::assertResponseIsSuccessful();
-        self::assertSame(self::EXPECTED, $client->getInternalResponse()->getContent());
-
-        $client->request('GET', 'https://forged.example.net/contact');
-        self::assertResponseHeaderSame('Link', '<https://example.com/llms.txt>; rel="llms-txt"');
-        self::assertSelectorExists('head link[rel="llms-txt"][href="https://example.com/llms.txt"]');
-    }
-
     public function testDumpsTheFileThenServesIt(): void
     {
         $client = self::createClient();

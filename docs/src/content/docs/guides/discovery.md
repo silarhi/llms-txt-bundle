@@ -38,5 +38,4 @@ Twig function of the first example comes from WebLink too. The header is added t
 errors, JSON or the `llms.txt` file itself.
 
 `llms_txt_url()` returns the absolute URL alone. Both use the route of the bundle when it is imported, and `/llms.txt`
-at the root of the site otherwise. The URL, in the tag and in the header, comes from `framework.router.default_uri` when
-it is set, like the URLs of the file: see [the host of the URLs](/guides/serving/#the-host-of-the-urls).
+at the root of the site otherwise.

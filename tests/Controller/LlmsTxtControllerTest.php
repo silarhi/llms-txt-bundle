@@ -21,21 +21,14 @@ use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
 use Silarhi\LlmsTxtBundle\Event\LlmsTxtPopulateEvent;
 use Silarhi\LlmsTxtBundle\Exception\MissingTitleException;
 use Silarhi\LlmsTxtBundle\Model\Link;
-use Silarhi\LlmsTxtBundle\Routing\DefaultUriContext;
 use Silarhi\LlmsTxtBundle\Service\Generator;
 use Silarhi\LlmsTxtBundle\Service\MarkdownRenderer;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\Routing\Generator\UrlGenerator;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\RequestContext;
-use Symfony\Component\Routing\Route;
-use Symfony\Component\Routing\RouteCollection;
 
 final class LlmsTxtControllerTest extends TestCase
 {
@@ -124,21 +117,6 @@ final class LlmsTxtControllerTest extends TestCase
         $controller(new Request());
     }
 
-    public function testUsesTheHostOfTheRequestWithoutDefaultUri(): void
-    {
-        $request = Request::create('https://www.example.org/llms.txt');
-
-        self::assertStringContainsString('(https://www.example.org/contact)', $this->send($this->createRoutedController($request)($request)));
-    }
-
-    public function testUsesTheDefaultUriWhateverTheHostOfTheRequest(): void
-    {
-        $request = Request::create('https://forged.example.net/llms.txt');
-
-        // the URLs of the listeners come from "default_uri" too
-        self::assertStringContainsString('(https://example.com/contact)', $this->send($this->createRoutedController($request, 'https://example.com')($request)));
-    }
-
     private function send(Response $response): string
     {
         ob_start();
@@ -155,32 +133,6 @@ final class LlmsTxtControllerTest extends TestCase
             $this->directory,
             'text/plain; charset=UTF-8',
             600,
-        );
-    }
-
-    /**
-     * A controller whose listener generates its URL from the router, as RouterListener leaves it during the request.
-     */
-    private function createRoutedController(Request $request, string $defaultUri = ''): LlmsTxtController
-    {
-        $routes = new RouteCollection();
-        $routes->add('contact', new Route('/contact'));
-        $router = new UrlGenerator($routes, (new RequestContext())->fromRequest($request));
-        $requestStack = new RequestStack();
-        $requestStack->push($request);
-
-        $dispatcher = new EventDispatcher();
-        $dispatcher->addListener(LlmsTxtPopulateEvent::class, static function (LlmsTxtPopulateEvent $event) use ($router): void {
-            $event->getDocument()->addLink('Pages', $router->generate('contact', [], UrlGeneratorInterface::ABSOLUTE_URL), 'Contact');
-        });
-
-        return new LlmsTxtController(
-            new Generator($dispatcher, 'Routed'),
-            new MarkdownRenderer(),
-            $this->directory,
-            'text/plain; charset=UTF-8',
-            600,
-            new DefaultUriContext($router, $requestStack, $defaultUri),
         );
     }
 }

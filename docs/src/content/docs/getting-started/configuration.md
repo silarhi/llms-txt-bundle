@@ -28,6 +28,3 @@ llms_txt:
         # The relation of the Link header and of the llms_txt_link() tag
         rel: 'llms-txt'
 ```
-
-Set `framework.router.default_uri` (or `framework.trusted_hosts`) in production: see
-[the host of the URLs](/guides/serving/#the-host-of-the-urls).

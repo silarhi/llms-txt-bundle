@@ -16,11 +16,9 @@ namespace Silarhi\LlmsTxtBundle;
 use Override;
 use Silarhi\LlmsTxtBundle\Command\DumpCommand;
 use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
-use Silarhi\LlmsTxtBundle\DependencyInjection\DefaultUriPass;
 use Silarhi\LlmsTxtBundle\DependencyInjection\WebLinkPass;
 use Silarhi\LlmsTxtBundle\EventListener\DiscoveryLinkListener;
 use Silarhi\LlmsTxtBundle\EventListener\RouteOptionsListener;
-use Silarhi\LlmsTxtBundle\Routing\DefaultUriContext;
 use Silarhi\LlmsTxtBundle\Service\Dumper;
 use Silarhi\LlmsTxtBundle\Service\DumperInterface;
 use Silarhi\LlmsTxtBundle\Service\Generator;
@@ -51,7 +49,6 @@ final class LlmsTxtBundle extends AbstractBundle
         parent::build($container);
 
         $container->addCompilerPass(new WebLinkPass());
-        $container->addCompilerPass(new DefaultUriPass());
     }
 
     #[Override]
@@ -134,12 +131,8 @@ final class LlmsTxtBundle extends AbstractBundle
             ->args([service('llms_txt.generator'), service('llms_txt.renderer'), service('filesystem'), $config['dump_directory']]);
         $services->alias(DumperInterface::class, 'llms_txt.dumper');
 
-        // The default URI is set by DefaultUriPass, from "router.request_context"
-        $services->set('llms_txt.default_uri_context', DefaultUriContext::class)
-            ->args([service('router'), service('request_stack'), '']);
-
         $services->set('llms_txt.url_generator', UrlGenerator::class)
-            ->args([service('router'), service('url_helper'), service('llms_txt.default_uri_context')]);
+            ->args([service('router'), service('url_helper')]);
 
         $services->set('llms_txt.controller', LlmsTxtController::class)
             ->args([
@@ -148,7 +141,6 @@ final class LlmsTxtBundle extends AbstractBundle
                 $config['dump_directory'],
                 $config['content_type'],
                 $config['max_age'],
-                service('llms_txt.default_uri_context'),
             ])
             ->tag('controller.service_arguments')
             ->public();
