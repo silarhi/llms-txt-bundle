@@ -76,6 +76,9 @@ final class TestKernel extends Kernel
                 'utf8' => true,
                 'default_uri' => 'https://example.com',
             ],
+            // discovery.link_header needs WebLink. FrameworkBundle only enables it by default because it checks a
+            // misspelled "symfony/weblink" package: symfony/web-link, a dev dependency here, would not count.
+            'web_link' => ['enabled' => true],
         ]);
 
         $container->extension('twig', [
