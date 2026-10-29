@@ -55,6 +55,7 @@ final class LlmsTxtTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertResponseHeaderSame('Content-Type', 'text/plain; charset=UTF-8');
+        self::assertResponseHeaderSame('X-Content-Type-Options', 'nosniff');
         self::assertSame(self::EXPECTED, $client->getInternalResponse()->getContent());
     }
 

@@ -29,7 +29,8 @@ use Throwable;
 /**
  * Serves the dumped file when there is one, builds it on the fly otherwise. A file dumped into the public directory
  * is served by the web server before reaching this controller: dump it elsewhere (var/, a read-only image…) to have
- * it served from here.
+ * it served from here. In production, dump it from a cron or after each deployment: built on the fly, the file runs
+ * every listener on each request that reaches the controller.
  */
 final readonly class LlmsTxtController
 {
@@ -58,6 +59,7 @@ final readonly class LlmsTxtController
             : $this->render();
 
         $response->headers->set('Content-Type', $this->contentType);
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->setPublic();
         $response->setMaxAge($this->maxAge);
 

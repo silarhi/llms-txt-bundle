@@ -55,6 +55,7 @@ final class LlmsTxtControllerTest extends TestCase
         self::assertSame('text/plain; charset=UTF-8', $response->headers->get('Content-Type'));
         self::assertSame('12', $response->headers->get('Content-Length'));
         self::assertSame('"' . hash('xxh128', "# Generated\n") . '"', $response->getEtag());
+        self::assertSame('nosniff', $response->headers->get('X-Content-Type-Options'));
         self::assertTrue($response->headers->hasCacheControlDirective('public'));
         self::assertSame('600', $response->headers->getCacheControlDirective('max-age'));
     }
@@ -81,6 +82,7 @@ final class LlmsTxtControllerTest extends TestCase
         self::assertSame('text/plain; charset=UTF-8', $response->headers->get('Content-Type'));
         self::assertTrue($response->headers->has('ETag'));
         self::assertTrue($response->headers->has('Last-Modified'));
+        self::assertSame('nosniff', $response->headers->get('X-Content-Type-Options'));
         self::assertSame('600', $response->headers->getCacheControlDirective('max-age'));
 
         $notModified = $this->createController()(new Request(server: ['HTTP_IF_NONE_MATCH' => (string) $response->getEtag()]));

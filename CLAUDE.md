@@ -90,6 +90,9 @@ composer normalize
   before creating the response, so a listener failing half way is an error page. It sends the buffer with an
   `fread()` loop, not `fpassthru()`, which maps the whole temporary file into the output buffers. A
   `StreamedResponse` runs its callback even on a 304: the controller swaps it for a no-op then.
+- **No application cache, no lock.** Built on the fly, the file runs every listener on each request: production sites
+  dump it from a cron (`llms-txt:dump`), which the docs push. URLs come from the request context: the bundle relies on
+  `framework.trusted_hosts` against forged `Host` headers, it does not override the host.
 - **Dumper** writes the chunks to a temporary file next to the target and renames it: atomic, and the previous file
   stays when a listener fails.
 - **Route options are cached.** `RouteOptionsListener` loads the route collection (every attribute, YAML or XML route
