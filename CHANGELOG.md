@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - Unreleased
+
+### Added
+
+- The `cache.pool` (`cache.app`) and `cache.ttl` (300 seconds, 0 to disable) options: the file built on the fly is cached, one entry per base URL. The listeners no longer run on every request: a `304 Not Modified` is answered from the cache, and a `?random` query string past the HTTP caches no longer rebuilds the file. A file larger than 1 MiB is not cached, to keep the memory flat: dump it.
+
+### Security
+
+- The absolute URLs of the file (the `llms_txt` route option, and those `LlmsTxtPopulateEvent` listeners generate with the router), of `llms_txt_url()`, `llms_txt_link()` and of the discovery `Link` header come from `framework.router.default_uri` when it is set, not from the request: a forged `Host` (or `X-Forwarded-Host`) header no longer ends up in the publicly cached file. Without `default_uri`, or with the `http://localhost` placeholder of the Symfony recipe, they keep the host of the request: set `framework.trusted_hosts` then.
+- The `/llms.txt` responses carry `X-Content-Type-Options: nosniff`.
+
 ## [1.3.0] - 2026-10-12
 
 ### Changed
@@ -45,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Document::addLinks()` takes an iterable read only while the file is rendered: with a generator, the memory stays flat whatever the number of links.
 - Discovery: the `llms_txt_link()` and `llms_txt_url()` Twig functions, and an opt-in `Link` header on HTML pages through WebLink (`discovery.link_header`).
 
+[1.4.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.3.0...HEAD
 [1.3.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/silarhi/llms-txt-bundle/compare/v1.1.0...v1.1.1

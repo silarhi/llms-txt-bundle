@@ -19,6 +19,7 @@ use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
 use Silarhi\LlmsTxtBundle\DependencyInjection\WebLinkPass;
 use Silarhi\LlmsTxtBundle\EventListener\DiscoveryLinkListener;
 use Silarhi\LlmsTxtBundle\EventListener\RouteOptionsListener;
+use Silarhi\LlmsTxtBundle\Routing\DefaultUriContext;
 use Silarhi\LlmsTxtBundle\Service\Dumper;
 use Silarhi\LlmsTxtBundle\Service\DumperInterface;
 use Silarhi\LlmsTxtBundle\Service\Generator;
@@ -88,6 +89,21 @@ final class LlmsTxtBundle extends AbstractBundle
                     ->min(0)
                     ->info('The Cache-Control max-age of the controller responses, in seconds.')
                 ->end()
+                ->arrayNode('cache')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('pool')
+                            ->defaultValue('cache.app')
+                            ->cannotBeEmpty()
+                            ->info('The cache pool keeping the file built on the fly, one entry per base URL.')
+                        ->end()
+                        ->integerNode('ttl')
+                            ->defaultValue(300)
+                            ->min(0)
+                            ->info('How long the file built on the fly is cached, in seconds: 0 builds it on each request.')
+                        ->end()
+                    ->end()
+                ->end()
                 ->arrayNode('discovery')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -116,6 +132,7 @@ final class LlmsTxtBundle extends AbstractBundle
          *     dump_directory: string,
          *     content_type: string,
          *     max_age: int,
+         *     cache: array{pool: string, ttl: int},
          *     discovery: array{link_header: bool, rel: string},
          * } $config */
         $services = $container->services();
@@ -131,8 +148,12 @@ final class LlmsTxtBundle extends AbstractBundle
             ->args([service('llms_txt.generator'), service('llms_txt.renderer'), service('filesystem'), $config['dump_directory']]);
         $services->alias(DumperInterface::class, 'llms_txt.dumper');
 
+        // FrameworkBundle puts "framework.router.default_uri" there
+        $services->set('llms_txt.default_uri_context', DefaultUriContext::class)
+            ->args([service('router'), service('request_stack'), '%router.request_context.base_url%']);
+
         $services->set('llms_txt.url_generator', UrlGenerator::class)
-            ->args([service('router'), service('url_helper')]);
+            ->args([service('router'), service('url_helper'), service('llms_txt.default_uri_context')]);
 
         $services->set('llms_txt.controller', LlmsTxtController::class)
             ->args([
@@ -141,6 +162,9 @@ final class LlmsTxtBundle extends AbstractBundle
                 $config['dump_directory'],
                 $config['content_type'],
                 $config['max_age'],
+                service('llms_txt.default_uri_context'),
+                service($config['cache']['pool']),
+                $config['cache']['ttl'],
             ])
             ->tag('controller.service_arguments')
             ->public();
