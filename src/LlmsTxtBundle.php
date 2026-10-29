@@ -16,6 +16,7 @@ namespace Silarhi\LlmsTxtBundle;
 use Override;
 use Silarhi\LlmsTxtBundle\Command\DumpCommand;
 use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
+use Silarhi\LlmsTxtBundle\DependencyInjection\DefaultUriPass;
 use Silarhi\LlmsTxtBundle\DependencyInjection\WebLinkPass;
 use Silarhi\LlmsTxtBundle\EventListener\DiscoveryLinkListener;
 use Silarhi\LlmsTxtBundle\EventListener\RouteOptionsListener;
@@ -50,6 +51,7 @@ final class LlmsTxtBundle extends AbstractBundle
         parent::build($container);
 
         $container->addCompilerPass(new WebLinkPass());
+        $container->addCompilerPass(new DefaultUriPass());
     }
 
     #[Override]
@@ -148,9 +150,9 @@ final class LlmsTxtBundle extends AbstractBundle
             ->args([service('llms_txt.generator'), service('llms_txt.renderer'), service('filesystem'), $config['dump_directory']]);
         $services->alias(DumperInterface::class, 'llms_txt.dumper');
 
-        // FrameworkBundle puts "framework.router.default_uri" there
+        // The default URI is set by DefaultUriPass, from "router.request_context"
         $services->set('llms_txt.default_uri_context', DefaultUriContext::class)
-            ->args([service('router'), service('request_stack'), '%router.request_context.base_url%']);
+            ->args([service('router'), service('request_stack'), '']);
 
         $services->set('llms_txt.url_generator', UrlGenerator::class)
             ->args([service('router'), service('url_helper'), service('llms_txt.default_uri_context')]);

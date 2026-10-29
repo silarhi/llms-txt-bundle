@@ -29,7 +29,7 @@ use Symfony\Component\Routing\RequestContextAwareInterface;
 final readonly class DefaultUriContext
 {
     /**
-     * @param string $defaultUri "%router.request_context.base_url%", where FrameworkBundle puts "default_uri"
+     * @param string $defaultUri "framework.router.default_uri", the first argument of "router.request_context" (DefaultUriPass)
      */
     public function __construct(
         private RequestContextAwareInterface $router,

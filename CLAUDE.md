@@ -22,7 +22,8 @@ src/
 ├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url])
 ├── Controller/         # LlmsTxtController: serves the dumped file, or renders it whole into a php://temp buffer
 │                       #   (Content-Length, ETag, 304) before responding, cached in a pool (cache.pool, cache.ttl)
-├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link
+├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link,
+│                       #   DefaultUriPass: hands framework.router.default_uri to DefaultUriContext
 ├── Event/              # LlmsTxtPopulateEvent
 ├── EventListener/      # RouteOptionsListener (the "llms_txt" route option),
 │                       #   DiscoveryLinkListener (Link header of HTML pages, through WebLink's "_links")
@@ -97,7 +98,9 @@ composer normalize
   null with `$save = false` then, and the controller streams the buffer it rendered.
 - **Host of the URLs.** During a request, RouterListener fills the router's `RequestContext` from the request (Host,
   X-Forwarded-Host). `DefaultUriContext::apply()` swaps in the scheme, host, ports and base URL of
-  `%router.request_context.base_url%` (where FrameworkBundle puts `default_uri`) and restores them afterwards. The
+  `default_uri` and restores them afterwards. `DefaultUriPass` copies it from the first argument of
+  `router.request_context`: FrameworkBundle 6.4.0 writes it there, later versions pass the
+  `router.request_context.base_url` parameter. The
   controller wraps the whole rendering in it, so the listeners' URLs (generated while the chunks are read) follow
   too; `UrlGenerator` (discovery) as well. Not configured: empty, no host, or the recipe's `http://localhost`. No
   main request (commands, workers): no-op, so `llms-txt:dump --base-url` keeps working.
