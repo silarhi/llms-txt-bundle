@@ -15,6 +15,7 @@ namespace Silarhi\LlmsTxtBundle\Tests\Controller;
 
 use Generator as PhpGenerator;
 use Override;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
@@ -23,6 +24,7 @@ use Silarhi\LlmsTxtBundle\Exception\MissingTitleException;
 use Silarhi\LlmsTxtBundle\Model\Link;
 use Silarhi\LlmsTxtBundle\Service\Generator;
 use Silarhi\LlmsTxtBundle\Service\MarkdownRenderer;
+use Silarhi\LlmsTxtBundle\Tests\Fixtures\FailingPhpStreamWrapper;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -115,6 +117,34 @@ final class LlmsTxtControllerTest extends TestCase
         $this->expectExceptionMessage('The second offer has no URL');
 
         $controller(new Request());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideFailingBuffers(): iterable
+    {
+        yield 'open' => [FailingPhpStreamWrapper::OPEN, 'Failed to open a php://temp buffer.'];
+        yield 'write' => [FailingPhpStreamWrapper::WRITE, 'Failed to write the php://temp buffer.'];
+    }
+
+    #[DataProvider('provideFailingBuffers')]
+    public function testFailsBeforeRespondingWhenTheBufferFails(string $failure, string $message): void
+    {
+        $controller = $this->createController();
+
+        FailingPhpStreamWrapper::register($failure);
+        // the warning of fopen() is left to the application: the exception is the guard of the controller
+        set_error_handler(static fn (): bool => true, \E_WARNING);
+        try {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage($message);
+
+            $controller(new Request());
+        } finally {
+            restore_error_handler();
+            FailingPhpStreamWrapper::unregister();
+        }
     }
 
     private function send(Response $response): string

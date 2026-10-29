@@ -37,7 +37,7 @@ config/
 └── routes.php          # GET|HEAD /llms.txt
 tests/                  # PHPUnit tests mirroring src/, Functional/ (LlmsTxtTest, FlatMemoryTest),
                         #   Fixtures/ (TestKernel, PopulateSubscriber, PageController,
-                        #   FailingStreamWrapper, templates/)
+                        #   FailingStreamWrapper, FailingPhpStreamWrapper, templates/)
 ```
 
 ## Build & Test Commands
