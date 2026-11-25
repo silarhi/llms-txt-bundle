@@ -21,7 +21,7 @@ return RectorConfig::configure()
         'src',
         'tests',
     ])
-    ->withPhpSets(php82: true)
+    ->withPhpSets()
     ->withComposerBased()
     ->withSkip([
         // Symfony 8.1 moves the bundle classes to DependencyInjection\Kernel: the bundle still supports 6.4 and 7.x
