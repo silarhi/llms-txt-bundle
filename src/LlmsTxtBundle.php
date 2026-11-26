@@ -17,8 +17,12 @@ use Override;
 use ReflectionClass;
 use ReflectionMethod;
 use Silarhi\LlmsTxtBundle\Attribute\AsLlmsTxtLinkProvider;
+use Silarhi\LlmsTxtBundle\Command\DebugCommand;
 use Silarhi\LlmsTxtBundle\Command\DumpCommand;
 use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
+use Silarhi\LlmsTxtBundle\Debug\Inspector;
+use Silarhi\LlmsTxtBundle\Debug\LinkChecker;
+use Silarhi\LlmsTxtBundle\Debug\SourceDescriber;
 use Silarhi\LlmsTxtBundle\DependencyInjection\LinkProviderPass;
 use Silarhi\LlmsTxtBundle\DependencyInjection\MarkdownEscapingPass;
 use Silarhi\LlmsTxtBundle\DependencyInjection\WebLinkPass;
@@ -41,6 +45,7 @@ use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
@@ -233,6 +238,20 @@ final class LlmsTxtBundle extends AbstractBundle
         if (class_exists(Command::class)) {
             $services->set('llms_txt.dump_command', DumpCommand::class)
                 ->args([service('llms_txt.dumper'), service('router'), $config['full']['enabled'] ? service('llms_txt.full_dumper') : null])
+                ->tag('console.command');
+
+            $services->set('.llms_txt.debug.inspector', Inspector::class)
+                ->args([
+                    service('llms_txt.generator'),
+                    service('llms_txt.renderer'),
+                    $config['full']['enabled'] ? service('llms_txt.full_renderer') : null,
+                    inline_service(SourceDescriber::class)->args([service('event_dispatcher')]),
+                    inline_service(LinkChecker::class)->args([service('router')]),
+                    $config['dump_directory'],
+                ]);
+
+            $services->set('llms_txt.debug_command', DebugCommand::class)
+                ->args([service('.llms_txt.debug.inspector')])
                 ->tag('console.command');
         }
 

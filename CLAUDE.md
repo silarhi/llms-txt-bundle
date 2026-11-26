@@ -20,9 +20,13 @@ and a command dumps it.
 ```
 src/
 ├── Attribute/          # AsLlmsTxtLinkProvider (class or method, repeatable): adds the llms_txt.link_provider tag
-├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url]: llms.txt, and llms-full.txt when enabled)
+├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url]: llms.txt, and llms-full.txt when enabled),
+│                       #   DebugCommand (debug:llms-txt [--strict] [--format=json] [--max-size])
 ├── Controller/         # LlmsTxtController (two services: llms.txt, llms-full.txt): serves the dumped file, or renders it whole into a php://temp buffer
 │                       #   (Content-Length, ETag, 304) before responding
+├── Debug/              # @internal, for debug:llms-txt: Inspector (builds the Report), SourceDescriber (the listeners),
+│                       #   LinkChecker (counts, duplicates, relative URLs, host, titles), Report, Source, SectionStats,
+│                       #   DumpedFile, LinkCheck (read-only results)
 ├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link,
 │                       #   LinkProviderPass: one LinkProviderListener per llms_txt.link_provider tag,
 │                       #   MarkdownEscapingPass: MarkdownEscapingStrategy as Twig's autoescape, with markdown_versions
@@ -131,6 +135,11 @@ composer normalize
   `ArrayToFirstClassCallableRector` is skipped there). `LlmsTxtEntry::$markdown` `null` follows the requirement:
   the route options cache stores the option (5th element) and whether the route has a `.md` URL (6th), the toggle is
   applied in `populate()` since the cache does not follow the configuration; a 1.4 cache (4 elements) still works.
+- **`debug:llms-txt` only reads options and prints**: `Debug\Inspector` builds the `Report` (read-only objects,
+  `JsonSerializable` for `--format=json`). It builds the document up to three times (checks, llms.txt size,
+  llms-full.txt size): links given as generators can be read once. `SourceDescriber` reads
+  `getListeners(LlmsTxtPopulateEvent::class)` and unwraps the debug mode's `WrappedListener`; `LinkChecker` reads
+  every link once and keeps the URLs (not the links) to find duplicates. The `Debug\` classes are `@internal`.
 - **Discovery** goes through WebLink: `DiscoveryLinkListener` (priority 8) adds a link to the request's `_links`, which
   WebLink's `AddLinkHeaderListener` (priority 0) serializes with the other links. Only successful HTML main requests
   (not XHR, Turbo Frames, redirects, errors, other formats).

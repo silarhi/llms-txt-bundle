@@ -160,6 +160,18 @@ final class LlmsTxtTest extends WebTestCase
         self::assertSame("# Guide & FAQ\n", $client->getInternalResponse()->getContent());
     }
 
+    public function testDebugsTheFile(): void
+    {
+        $tester = new CommandTester((new Application(self::bootKernel()))->find('debug:llms-txt'));
+        $tester->execute(['--strict' => true]);
+
+        $tester->assertCommandIsSuccessful();
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('route options', $display);
+        self::assertStringContainsString('Silarhi\LlmsTxtBundle\Tests\Fixtures\CatalogLinks::offers', $display);
+        self::assertStringContainsString('No problem found.', $display);
+    }
+
     public function testAdvertisesTheFileOnHtmlPages(): void
     {
         $client = self::createClient();

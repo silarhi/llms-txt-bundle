@@ -35,8 +35,8 @@ final readonly class LinkProviderListener
      */
     public function __construct(
         private Closure $provider,
-        private string $section,
-        private string $name,
+        public string $section,
+        public string $name,
     ) {
     }
 
