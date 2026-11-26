@@ -27,6 +27,8 @@ return RectorConfig::configure()
     ->withSkip([
         // Symfony 8.1 moves the bundle classes to DependencyInjection\Kernel: the bundle still supports 6.4 and 7.x
         RenameClassRector::class,
+        // read by the dead code rule test, which expects some of their methods to be reported
+        __DIR__ . '/tests/PHPStan/Data',
         // The bundle registers its services without autoconfiguration: #[AsEventListener] would not be read
         EventSubscriberToAttributeRector::class,
         // Twig's autoescape strategy goes into the compiled container, which cannot dump a closure

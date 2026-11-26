@@ -102,6 +102,21 @@ services:
 An invalid tag (no `section`, a method that is not public) fails when the container builds, a provider returning
 anything but an iterable fails the requests of the file, both with an `InvalidLinkProviderException`.
 
+## Static analysis
+
+[shipmonk/dead-code-detector](https://github.com/shipmonk-rnd/dead-code-detector) cannot see that the bundle calls the
+providers: it reports them as dead code. Include the bundle's usage provider, which keeps the methods carrying the
+attribute, and the `__invoke()` method or the one `method` names of a class carrying it (not automatic: it needs the
+detector installed):
+
+```neon
+# phpstan.neon
+includes:
+    - vendor/silarhi/llms-txt-bundle/shipmonk.neon
+```
+
+A provider registered with the tag by hand is not covered: the detector does not read the services configuration.
+
 :::tip
 A provider is the shortest way to add a section. Reach for an [event listener](/guides/event-listener/) to change the
 document itself: its title, summary or details.

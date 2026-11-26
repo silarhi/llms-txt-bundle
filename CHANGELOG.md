@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - Unreleased
+
+### Added
+
+- A usage provider for [shipmonk/dead-code-detector](https://github.com/shipmonk-rnd/dead-code-detector), which reported the link providers as dead code: include `vendor/silarhi/llms-txt-bundle/shipmonk.neon` in your PHPStan configuration. It keeps the methods carrying `#[AsLlmsTxtLinkProvider]`, and the `__invoke()` method or the one `method` names of a class carrying it.
+
+### Fixed
+
+- `debug:llms-txt` accepts a `--max-size` given as an integer, as code passes it (`$tester->execute(['--max-size' => 524288])` in a `CommandTester`, an `ArrayInput`): only a string was accepted.
+
 ## [1.5.0] - 2026-11-26
 
 ### Added
@@ -60,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Document::addLinks()` takes an iterable read only while the file is rendered: with a generator, the memory stays flat whatever the number of links.
 - Discovery: the `llms_txt_link()` and `llms_txt_url()` Twig functions, and an opt-in `Link` header on HTML pages through WebLink (`discovery.link_header`).
 
+[1.5.1]: https://github.com/silarhi/llms-txt-bundle/compare/v1.5.0...HEAD
 [1.5.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.2.0...v1.3.0
