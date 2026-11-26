@@ -37,6 +37,8 @@ src/
 │                       #   DiscoveryLinkListener (Link header of HTML pages, through WebLink's "_links")
 ├── Exception/          # LlmsTxtExceptionInterface and implementations
 ├── Model/              # Document, Section (links or lazy iterables of links), Link (+ content for llms-full.txt)
+├── PHPStan/            # LinkProviderMemberUsageProvider: shipmonk/dead-code-detector keeps the link providers
+│                       #   (registered by the root shipmonk.neon, which apps include: it needs the detector)
 ├── Routing/            # LlmsTxtEntry: the "llms_txt" route option as an object (fromArray() for YAML/XML routes),
 │                       #   MarkdownRoutes (@internal: the routes whose "_format" requirement lists "md", cached)
 ├── Service/            # Generator (+ interface), MarkdownRenderer, FullMarkdownRenderer (+ RendererInterface),
@@ -117,6 +119,11 @@ composer normalize
   autoconfiguration, before `RegisterListenersPass`) validates each tag and registers a `LinkProviderListener` tagged
   `kernel.event_listener` with the provider's priority: providers and hand-written listeners share one order. The
   provider is a `Closure::fromCallable()` definition; the listener checks the result is iterable, not each link.
+- **Dead code detection.** `PHPStan\LinkProviderMemberUsageProvider` (a `ReflectionBasedMemberUsageProvider`) marks
+  the methods carrying `#[AsLlmsTxtLinkProvider]` as used, and on a class carrying it the method it names
+  (`__invoke` by default, compared case-insensitively). `shipmonk.neon` registers it; the bundle's own `phpstan.neon`
+  includes it, since phpstan/extension-installer only registers the dependencies' extensions. Its rule test reads
+  `tests/PHPStan/Data/`, excluded from PHPStan and Rector. Tags set by hand stay invisible to the detector.
 - **llms-full.txt** reuses everything: the same document and listeners, `FullMarkdownRenderer` instead of
   `MarkdownRenderer`, a second controller and dumper with `FULL_FILENAME`. `Link::$content` (a string, or a closure
   returning a string or `iterable<string>`) is only read by the full renderer: the closure spares `llms.txt` building

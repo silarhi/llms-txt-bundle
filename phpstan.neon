@@ -1,13 +1,45 @@
+includes:
+    # the usage provider of the bundle itself: phpstan/extension-installer only registers those of the dependencies
+    - shipmonk.neon
+
 parameters:
     level: max
     paths:
+        - config/routes.php
         - src
         - tests
     tmpDir: var/tools/phpstan
+    excludePaths:
+        # read by LinkProviderMemberUsageProviderTest, which expects some of their methods to be reported
+        - tests/PHPStan/Data/*
     ignoreErrors:
         # the config tree validates $config: its shape is narrowed by an inline @var, the parent signature allows no @param
         -
             identifier: missingType.iterableValue
             path: src/LlmsTxtBundle.php
             message: '#loadExtension#'
+            count: 1
+        # PHP sets the context of a stream wrapper, which reads it only to open other streams
+        -
+            identifiers:
+                - shipmonk.deadProperty.neverRead
+                - shipmonk.deadProperty.neverWritten
+            path: tests/Fixtures/FailingPhpStreamWrapper.php
+            count: 1
+        -
+            identifiers:
+                - shipmonk.deadProperty.neverRead
+                - shipmonk.deadProperty.neverWritten
+            path: tests/Fixtures/FailingStreamWrapper.php
+            count: 1
+        # the routes of TestKernel name its actions in [class, method] arrays, which the detector does not follow
+        -
+            identifier: shipmonk.deadMethod
+            path: tests/Fixtures/PageController.php
+            count: 4
+        # LinkProviderPassTest tags it by hand, without the attribute
+        -
+            identifier: shipmonk.deadMethod
+            message: '#^Unused Silarhi\\LlmsTxtBundle\\Tests\\Fixtures\\CatalogLinks::staticLinks$#'
+            path: tests/Fixtures/CatalogLinks.php
             count: 1

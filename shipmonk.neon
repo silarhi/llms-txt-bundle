@@ -1,0 +1,8 @@
+# For applications using shipmonk/dead-code-detector: include it next to the detector, e.g.
+#     includes:
+#         - vendor/silarhi/llms-txt-bundle/shipmonk.neon
+services:
+    -
+        class: Silarhi\LlmsTxtBundle\PHPStan\LinkProviderMemberUsageProvider
+        tags:
+            - shipmonk.deadCode.memberUsageProvider
