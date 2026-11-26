@@ -2,7 +2,7 @@
 title: From route options
 description: Add static pages to llms.txt with an llms_txt route option.
 sidebar:
-    order: 4
+    order: 5
 ---
 
 ```php

@@ -22,6 +22,9 @@ llms_txt:
     content_type: 'text/plain; charset=UTF-8'
     # Cache-Control max-age of the controller responses, in seconds
     max_age: 3600
+    full:
+        # Serves /llms-full.txt (404 otherwise) and dumps it with llms.txt: the pages whose links have a "content"
+        enabled: false
     discovery:
         # Adds the file to the Link header of the HTML pages, through WebLink: needs symfony/web-link
         link_header: false

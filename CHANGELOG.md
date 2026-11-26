@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `#[AsLlmsTxtLinkProvider(section: 'Products')]` registers a method returning the links of a section, without writing a `LlmsTxtPopulateEvent` listener: on a method (one service can feed several sections), or on a class for its `__invoke()` method. A `priority` orders providers and listeners together. The attribute adds the `llms_txt.link_provider` tag, which services can also carry by hand. An invalid provider fails with `InvalidLinkProviderException`.
+- `llms-full.txt`, the Markdown of the pages: `Link` takes a `content` (a string, or a closure returning a string or an iterable of strings, only called when that file is rendered), and the file lists each page with a content under its title and its source URL. `full: true` enables it: `GET /llms-full.txt` (in `routes.php`, `404` while disabled), and `llms-txt:dump` writes it next to `llms.txt`.
 
 ## [1.4.0] - 2026-10-29
 

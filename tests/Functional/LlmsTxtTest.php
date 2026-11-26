@@ -46,6 +46,26 @@ final class LlmsTxtTest extends WebTestCase
 
         MD;
 
+    private const EXPECTED_FULL = <<<'MD'
+        # Example
+
+        > An example site.
+
+        # Second offer
+
+        Source: https://example.com/offers/second
+
+        Half price,
+        this week.
+
+        # Blog
+
+        Source: https://example.com/blog
+
+        ## Posts
+
+        MD;
+
     #[Override]
     protected function setUp(): void
     {
@@ -64,6 +84,16 @@ final class LlmsTxtTest extends WebTestCase
         self::assertSame(self::EXPECTED, $client->getInternalResponse()->getContent());
     }
 
+    public function testServesTheFullFileOnTheFly(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', 'https://example.com/llms-full.txt');
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'text/plain; charset=UTF-8');
+        self::assertSame(self::EXPECTED_FULL, $client->getInternalResponse()->getContent());
+    }
+
     public function testDumpsTheFileThenServesIt(): void
     {
         $client = self::createClient();
@@ -79,6 +109,8 @@ final class LlmsTxtTest extends WebTestCase
         $client->request('GET', 'https://example.com/llms.txt');
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('https://www.example.org/contact', $client->getInternalResponse()->getContent());
+
+        self::assertFileExists($kernel->getCacheDir() . '/llms_txt/llms-full.txt');
     }
 
     public function testAdvertisesTheFileOnHtmlPages(): void

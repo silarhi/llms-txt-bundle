@@ -25,6 +25,7 @@ use Silarhi\LlmsTxtBundle\EventListener\DiscoveryLinkListener;
 use Silarhi\LlmsTxtBundle\EventListener\RouteOptionsListener;
 use Silarhi\LlmsTxtBundle\Service\Dumper;
 use Silarhi\LlmsTxtBundle\Service\DumperInterface;
+use Silarhi\LlmsTxtBundle\Service\FullMarkdownRenderer;
 use Silarhi\LlmsTxtBundle\Service\Generator;
 use Silarhi\LlmsTxtBundle\Service\GeneratorInterface;
 use Silarhi\LlmsTxtBundle\Service\MarkdownRenderer;
@@ -47,6 +48,10 @@ final class LlmsTxtBundle extends AbstractBundle
     public const FILENAME = 'llms.txt';
 
     public const ROUTE = 'llms_txt';
+
+    public const FULL_FILENAME = 'llms-full.txt';
+
+    public const FULL_ROUTE = 'llms_txt_full';
 
     #[Override]
     public function build(ContainerBuilder $container): void
@@ -95,6 +100,10 @@ final class LlmsTxtBundle extends AbstractBundle
                     ->min(0)
                     ->info('The Cache-Control max-age of the controller responses, in seconds.')
                 ->end()
+                ->arrayNode('full')
+                    ->info('llms-full.txt: the Markdown of the pages whose links have a "content", served at /llms-full.txt and dumped with llms.txt.')
+                    ->canBeEnabled()
+                ->end()
                 ->arrayNode('discovery')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -133,6 +142,7 @@ final class LlmsTxtBundle extends AbstractBundle
          *     dump_directory: string,
          *     content_type: string,
          *     max_age: int,
+         *     full: array{enabled: bool},
          *     discovery: array{link_header: bool, rel: string},
          * } $config */
         $services = $container->services();
@@ -145,8 +155,15 @@ final class LlmsTxtBundle extends AbstractBundle
         $services->alias(RendererInterface::class, 'llms_txt.renderer');
 
         $services->set('llms_txt.dumper', Dumper::class)
-            ->args([service('llms_txt.generator'), service('llms_txt.renderer'), service('filesystem'), $config['dump_directory']]);
+            ->args([service('llms_txt.generator'), service('llms_txt.renderer'), service('filesystem'), $config['dump_directory'], self::FILENAME]);
         $services->alias(DumperInterface::class, 'llms_txt.dumper');
+
+        $services->set('llms_txt.full_renderer', FullMarkdownRenderer::class);
+
+        if ($config['full']['enabled']) {
+            $services->set('llms_txt.full_dumper', Dumper::class)
+                ->args([service('llms_txt.generator'), service('llms_txt.full_renderer'), service('filesystem'), $config['dump_directory'], self::FULL_FILENAME]);
+        }
 
         $services->set('llms_txt.url_generator', UrlGenerator::class)
             ->args([service('router'), service('url_helper')]);
@@ -158,6 +175,22 @@ final class LlmsTxtBundle extends AbstractBundle
                 $config['dump_directory'],
                 $config['content_type'],
                 $config['max_age'],
+                self::FILENAME,
+                true,
+            ])
+            ->tag('controller.service_arguments')
+            ->public();
+
+        // registered even when disabled: the route of routes.php answers 404 then
+        $services->set('llms_txt.full_controller', LlmsTxtController::class)
+            ->args([
+                service('llms_txt.generator'),
+                service('llms_txt.full_renderer'),
+                $config['dump_directory'],
+                $config['content_type'],
+                $config['max_age'],
+                self::FULL_FILENAME,
+                $config['full']['enabled'],
             ])
             ->tag('controller.service_arguments')
             ->public();
@@ -175,7 +208,7 @@ final class LlmsTxtBundle extends AbstractBundle
 
         if (class_exists(Command::class)) {
             $services->set('llms_txt.dump_command', DumpCommand::class)
-                ->args([service('llms_txt.dumper'), service('router')])
+                ->args([service('llms_txt.dumper'), service('router'), $config['full']['enabled'] ? service('llms_txt.full_dumper') : null])
                 ->tag('console.command');
         }
 

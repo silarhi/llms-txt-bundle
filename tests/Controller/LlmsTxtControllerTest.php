@@ -22,6 +22,7 @@ use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
 use Silarhi\LlmsTxtBundle\Event\LlmsTxtPopulateEvent;
 use Silarhi\LlmsTxtBundle\Exception\MissingTitleException;
 use Silarhi\LlmsTxtBundle\Model\Link;
+use Silarhi\LlmsTxtBundle\Service\FullMarkdownRenderer;
 use Silarhi\LlmsTxtBundle\Service\Generator;
 use Silarhi\LlmsTxtBundle\Service\MarkdownRenderer;
 use Silarhi\LlmsTxtBundle\Tests\Fixtures\FailingPhpStreamWrapper;
@@ -31,6 +32,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class LlmsTxtControllerTest extends TestCase
 {
@@ -93,7 +95,7 @@ final class LlmsTxtControllerTest extends TestCase
 
     public function testFailsBeforeRespondingToAnInvalidDocument(): void
     {
-        $controller = new LlmsTxtController(new Generator(new EventDispatcher()), new MarkdownRenderer(), $this->directory, 'text/plain', 600);
+        $controller = new LlmsTxtController(new Generator(new EventDispatcher()), new MarkdownRenderer(), $this->directory, 'text/plain', 600, 'llms.txt', true);
 
         $this->expectException(MissingTitleException::class);
 
@@ -110,7 +112,7 @@ final class LlmsTxtControllerTest extends TestCase
                 throw new RuntimeException('The second offer has no URL');
             })());
         });
-        $controller = new LlmsTxtController(new Generator($dispatcher, 'Generated'), new MarkdownRenderer(), $this->directory, 'text/plain', 600);
+        $controller = new LlmsTxtController(new Generator($dispatcher, 'Generated'), new MarkdownRenderer(), $this->directory, 'text/plain', 600, 'llms.txt', true);
 
         // no response at all, so no truncated 200: the kernel turns the exception into an error page
         $this->expectException(RuntimeException::class);
@@ -147,6 +149,16 @@ final class LlmsTxtControllerTest extends TestCase
         }
     }
 
+    public function testAnswersNotFoundWhenDisabled(): void
+    {
+        $controller = new LlmsTxtController(new Generator(new EventDispatcher(), 'Generated'), new FullMarkdownRenderer(), $this->directory, 'text/plain', 600, 'llms-full.txt', false);
+
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('"llms-full.txt" is disabled.');
+
+        $controller(new Request());
+    }
+
     private function send(Response $response): string
     {
         ob_start();
@@ -163,6 +175,8 @@ final class LlmsTxtControllerTest extends TestCase
             $this->directory,
             'text/plain; charset=UTF-8',
             600,
+            'llms.txt',
+            true,
         );
     }
 }

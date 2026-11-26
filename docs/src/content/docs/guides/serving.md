@@ -2,7 +2,7 @@
 title: Serving the file
 description: Serve llms.txt on the fly or dump it with the llms-txt:dump command.
 sidebar:
-    order: 5
+    order: 6
 ---
 
 ## On the fly
@@ -39,6 +39,9 @@ php bin/console llms-txt:dump
 php bin/console llms-txt:dump --base-url=https://example.com   # without "framework.router.default_uri"
 php bin/console llms-txt:dump var/llms_txt                     # another directory
 ```
+
+With [`full.enabled`](/guides/llms-full/), the command dumps `llms-full.txt` too, next to `llms.txt`: the listeners run
+once for each file. `GET /llms-full.txt` works like `GET /llms.txt`, on the fly or dumped.
 
 The file is streamed to a temporary file next to it, renamed once complete: the web server never serves a half written
 file, and a failing listener leaves the previous one in place.

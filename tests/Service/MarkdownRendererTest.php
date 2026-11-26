@@ -58,6 +58,15 @@ final class MarkdownRendererTest extends TestCase
             MD, $this->render($document));
     }
 
+    public function testLeavesTheContentToTheFullFile(): void
+    {
+        $document = (new Document('Example'))->addLinks('Blog', [
+            new Link('https://example.com/blog', 'Blog', content: static fn (): never => throw new LogicException('Read by llms.txt')),
+        ]);
+
+        self::assertSame("# Example\n\n## Blog\n\n- [Blog](https://example.com/blog)\n", $this->render($document));
+    }
+
     public function testRendersTheTitleAlone(): void
     {
         self::assertSame("# Example\n", $this->render(new Document('Example', '  ', '')));

@@ -104,6 +104,6 @@ final class DumperTest extends TestCase
 
     private function createDumper(EventDispatcher $dispatcher, ?string $title): Dumper
     {
-        return new Dumper(new Generator($dispatcher, $title), new MarkdownRenderer(), new Filesystem(), $this->directory);
+        return new Dumper(new Generator($dispatcher, $title), new MarkdownRenderer(), new Filesystem(), $this->directory, 'llms.txt');
     }
 }

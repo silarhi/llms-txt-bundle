@@ -14,20 +14,21 @@ declare(strict_types=1);
 namespace Silarhi\LlmsTxtBundle\Controller;
 
 use RuntimeException;
-use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
 use Silarhi\LlmsTxtBundle\Service\GeneratorInterface;
 use Silarhi\LlmsTxtBundle\Service\RendererInterface;
 
+use function sprintf;
 use function strlen;
 
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 /**
- * Serves the dumped file when there is one, builds it on the fly otherwise. A file dumped into the public directory
+ * Serves llms.txt, or llms-full.txt with the full renderer. Serves the dumped file when there is one, builds it on the fly otherwise. A file dumped into the public directory
  * is served by the web server before reaching this controller: dump it elsewhere (var/, a read-only image…) to have
  * it served from here. In production, dump it from a cron or after each deployment: built on the fly, the file runs
  * every listener on each request that reaches the controller.
@@ -47,12 +48,21 @@ final readonly class LlmsTxtController
         private string $dumpDirectory,
         private string $contentType,
         private int $maxAge,
+        private string $filename,
+        private bool $enabled,
     ) {
     }
 
+    /**
+     * @throws NotFoundHttpException when the file is disabled: llms-full.txt without "llms_txt.full.enabled"
+     */
     public function __invoke(Request $request): Response
     {
-        $path = rtrim($this->dumpDirectory, '/') . '/' . LlmsTxtBundle::FILENAME;
+        if (!$this->enabled) {
+            throw new NotFoundHttpException(sprintf('"%s" is disabled.', $this->filename));
+        }
+
+        $path = rtrim($this->dumpDirectory, '/') . '/' . $this->filename;
 
         $response = is_file($path)
             ? new BinaryFileResponse($path, autoEtag: true, autoLastModified: true)

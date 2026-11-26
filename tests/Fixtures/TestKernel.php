@@ -27,7 +27,8 @@ use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
 /**
- * Framework + Twig + the bundle, with the discovery header on and the file dumped into the cache directory.
+ * Framework + Twig + the bundle, with the discovery header and llms-full.txt on, the files dumped into the cache
+ * directory.
  */
 final class TestKernel extends Kernel
 {
@@ -90,6 +91,7 @@ final class TestKernel extends Kernel
             'title' => 'Example',
             'summary' => 'An example site.',
             'dump_directory' => '%kernel.cache_dir%/llms_txt',
+            'full' => true,
             'discovery' => ['link_header' => true],
         ]);
 

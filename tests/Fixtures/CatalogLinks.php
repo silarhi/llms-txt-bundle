@@ -30,7 +30,7 @@ final readonly class CatalogLinks
     #[AsLlmsTxtLinkProvider(section: 'Offers', priority: -10)]
     public function offers(): iterable
     {
-        yield new Link('https://example.com/offers/second', 'Second offer');
+        yield new Link('https://example.com/offers/second', 'Second offer', content: static fn (): iterable => ["Half price,\n", 'this week.']);
     }
 
     /**
@@ -38,7 +38,7 @@ final readonly class CatalogLinks
      */
     public function __invoke(): array
     {
-        return [new Link('https://example.com/blog', 'Blog', 'The latest posts')];
+        return [new Link('https://example.com/blog', 'Blog', 'The latest posts', '## Posts')];
     }
 
     /**

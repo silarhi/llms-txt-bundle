@@ -18,4 +18,9 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add(LlmsTxtBundle::ROUTE, '/' . LlmsTxtBundle::FILENAME)
         ->controller('llms_txt.controller')
         ->methods(['GET', 'HEAD']);
+
+    // answers 404 unless "llms_txt.full.enabled"
+    $routes->add(LlmsTxtBundle::FULL_ROUTE, '/' . LlmsTxtBundle::FULL_FILENAME)
+        ->controller('llms_txt.full_controller')
+        ->methods(['GET', 'HEAD']);
 };

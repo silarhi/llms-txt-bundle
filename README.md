@@ -38,6 +38,7 @@
 - **Route options**: static pages join the file with an `llms_txt` route option, like the `sitemap` one
 - **On the fly or dumped**: the controller serves the dumped file when there is one, and builds it otherwise
 - **Flat memory**: links added as generators are read one at a time, streamed to the response or the dumped file
+- **llms-full.txt**: the Markdown of the pages, next to `llms.txt`, from the `content` of their links
 - **Spec compliant**: H1 title, blockquote summary, H2 sections of links, the `Optional` section always last, escaped links
 - **Discovery**: a `<link>` tag for the `<head>` of your pages and an opt-in `Link` header, through [WebLink](https://symfony.com/doc/current/web_link.html)
 
@@ -86,6 +87,7 @@ Everything else is on **[llms-txt-bundle.silarhi.dev](https://llms-txt-bundle.si
 
 - [Installation](https://llms-txt-bundle.silarhi.dev/getting-started/installation/) and [configuration reference](https://llms-txt-bundle.silarhi.dev/getting-started/configuration/)
 - Adding links: [link providers](https://llms-txt-bundle.silarhi.dev/guides/link-providers/), [event listeners](https://llms-txt-bundle.silarhi.dev/guides/event-listener/), [generators](https://llms-txt-bundle.silarhi.dev/guides/generators/) for large sections, [route options](https://llms-txt-bundle.silarhi.dev/guides/route-options/)
+- [llms-full.txt](https://llms-txt-bundle.silarhi.dev/guides/llms-full/): the Markdown of the pages
 - [Serving the file](https://llms-txt-bundle.silarhi.dev/guides/serving/), on the fly or dumped
 - [Discovery](https://llms-txt-bundle.silarhi.dev/guides/discovery/): `<link>` tag and `Link` header
 

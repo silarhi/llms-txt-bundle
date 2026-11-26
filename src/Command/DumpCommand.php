@@ -31,12 +31,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Routing\RequestContextAwareInterface;
 
-#[AsCommand(name: 'llms-txt:dump', description: 'Dumps the llms.txt file')]
+#[AsCommand(name: 'llms-txt:dump', description: 'Dumps the llms.txt file, and llms-full.txt when enabled')]
 final class DumpCommand extends Command
 {
     public function __construct(
         private readonly DumperInterface $dumper,
         private readonly RequestContextAwareInterface $router,
+        private readonly ?DumperInterface $fullDumper,
     ) {
         parent::__construct();
     }
@@ -45,7 +46,7 @@ final class DumpCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('target', InputArgument::OPTIONAL, 'The directory to dump the file into, "llms_txt.dump_directory" by default')
+            ->addArgument('target', InputArgument::OPTIONAL, 'The directory to dump the files into, "llms_txt.dump_directory" by default')
             ->addOption('base-url', null, InputOption::VALUE_REQUIRED, 'The base URL of the absolute URLs, e.g. "https://example.com", "framework.router.default_uri" by default');
     }
 
@@ -58,9 +59,15 @@ final class DumpCommand extends Command
         }
 
         $target = $input->getArgument('target');
-        $path = $this->dumper->dump(is_string($target) ? $target : null);
+        $target = is_string($target) ? $target : null;
 
-        (new SymfonyStyle($input, $output))->success(sprintf('Dumped "%s".', $path));
+        // each file runs the listeners again: the links given as generators can be read once
+        $paths = [$this->dumper->dump($target)];
+        if ($this->fullDumper instanceof DumperInterface) {
+            $paths[] = $this->fullDumper->dump($target);
+        }
+
+        (new SymfonyStyle($input, $output))->success(sprintf('Dumped "%s".', implode('", "', $paths)));
 
         return Command::SUCCESS;
     }

@@ -20,8 +20,8 @@ and a command dumps it.
 ```
 src/
 ├── Attribute/          # AsLlmsTxtLinkProvider (class or method, repeatable): adds the llms_txt.link_provider tag
-├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url])
-├── Controller/         # LlmsTxtController: serves the dumped file, or renders it whole into a php://temp buffer
+├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url]: llms.txt, and llms-full.txt when enabled)
+├── Controller/         # LlmsTxtController (two services: llms.txt, llms-full.txt): serves the dumped file, or renders it whole into a php://temp buffer
 │                       #   (Content-Length, ETag, 304) before responding
 ├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link,
 │                       #   LinkProviderPass: one LinkProviderListener per llms_txt.link_provider tag
@@ -29,14 +29,15 @@ src/
 ├── EventListener/      # RouteOptionsListener (the "llms_txt" route option), LinkProviderListener (one link provider),
 │                       #   DiscoveryLinkListener (Link header of HTML pages, through WebLink's "_links")
 ├── Exception/          # LlmsTxtExceptionInterface and implementations
-├── Model/              # Document, Section (links or lazy iterables of links), Link
+├── Model/              # Document, Section (links or lazy iterables of links), Link (+ content for llms-full.txt)
 ├── Routing/            # LlmsTxtEntry: the "llms_txt" route option as an object (fromArray() for YAML/XML routes)
-├── Service/            # Generator (+ interface), MarkdownRenderer (+ RendererInterface), Dumper (+ interface),
+├── Service/            # Generator (+ interface), MarkdownRenderer, FullMarkdownRenderer (+ RendererInterface),
+│                       #   Markdown (@internal: inline text, escaping, section order, chunks), Dumper (+ interface),
 │                       #   UrlGenerator (absolute URL of the file, for discovery)
 ├── Twig/               # LlmsTxtExtension (llms_txt_url, llms_txt_link)
 └── LlmsTxtBundle.php   # Bundle class with configuration tree and service wiring
 config/
-└── routes.php          # GET|HEAD /llms.txt
+└── routes.php          # GET|HEAD /llms.txt, /llms-full.txt (404 unless full.enabled)
 tests/                  # PHPUnit tests mirroring src/, Functional/ (LlmsTxtTest, FlatMemoryTest),
                         #   Fixtures/ (TestKernel, PopulateSubscriber, CatalogLinks, PageController,
                         #   FailingStreamWrapper, FailingPhpStreamWrapper, templates/)
@@ -108,6 +109,10 @@ composer normalize
   autoconfiguration, before `RegisterListenersPass`) validates each tag and registers a `LinkProviderListener` tagged
   `kernel.event_listener` with the provider's priority: providers and hand-written listeners share one order. The
   provider is a `Closure::fromCallable()` definition; the listener checks the result is iterable, not each link.
+- **llms-full.txt** reuses everything: the same document and listeners, `FullMarkdownRenderer` instead of
+  `MarkdownRenderer`, a second controller and dumper with `FULL_FILENAME`. `Link::$content` (a string, or a closure
+  returning a string or `iterable<string>`) is only read by the full renderer: the closure spares `llms.txt` building
+  the pages. Its route is always in `routes.php`; the controller answers 404 while `full.enabled` is false.
 - **Discovery** goes through WebLink: `DiscoveryLinkListener` (priority 8) adds a link to the request's `_links`, which
   WebLink's `AddLinkHeaderListener` (priority 0) serializes with the other links. Only successful HTML main requests
   (not XHR, Turbo Frames, redirects, errors, other formats).

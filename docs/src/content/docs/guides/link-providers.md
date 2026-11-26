@@ -75,7 +75,8 @@ final readonly class BlogLinks
 | `priority` | `0`          | The priority of the `LlmsTxtPopulateEvent` listener that calls the provider. |
 
 The method takes no argument and returns an iterable of `Link`: an array, or a generator to
-[keep the memory flat](/guides/generators/). It is called each time the file is built, and a generator is only read
+[keep the memory flat](/guides/generators/). A link can carry the Markdown of its page, for
+[llms-full.txt](/guides/llms-full/). It is called each time the file is built, and a generator is only read
 while the file is rendered.
 
 ## Order of the sections
