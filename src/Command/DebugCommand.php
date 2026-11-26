@@ -18,6 +18,7 @@ use function in_array;
 
 use InvalidArgumentException;
 
+use function is_int;
 use function is_string;
 
 use Override;
@@ -81,12 +82,16 @@ final class DebugCommand extends Command
             throw new InvalidArgumentException(sprintf('The format must be "%s", "%s" given.', implode('" or "', self::FORMATS), get_debug_type($format)));
         }
 
+        // a string from the command line, possibly an integer from code (CommandTester, an ArrayInput)
         $maxSize = $input->getOption('max-size');
-        if (!is_string($maxSize) || !ctype_digit($maxSize)) {
+        if (is_string($maxSize) && ctype_digit($maxSize)) {
+            $maxSize = (int) $maxSize;
+        }
+        if (!is_int($maxSize) || $maxSize < 0) {
             throw new InvalidArgumentException('The --max-size option must be a number of bytes.');
         }
 
-        $report = $this->inspector->inspect((int) $maxSize);
+        $report = $this->inspector->inspect($maxSize);
 
         if ('json' === $format) {
             $output->writeln(json_encode($report, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR));

@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Silarhi\LlmsTxtBundle\Tests\Command;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Silarhi\LlmsTxtBundle\Command\DebugCommand;
 use Silarhi\LlmsTxtBundle\Debug\Inspector;
@@ -111,12 +112,51 @@ final class DebugCommandTest extends TestCase
         $this->createTester(new EventDispatcher(), withFull: false)->execute(['--format' => 'xml']);
     }
 
-    public function testRejectsAnInvalidMaxSize(): void
+    /**
+     * The command line gives a string, code (a CommandTester, an ArrayInput) may give an integer.
+     */
+    #[DataProvider('provideMaxSizes')]
+    public function testReadsTheMaxSize(int|string $maxSize): void
+    {
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(LlmsTxtPopulateEvent::class, static function (LlmsTxtPopulateEvent $event): void {
+            $event->getDocument()->addLink('Blog', 'https://example.com/blog', 'Blog');
+        });
+
+        $tester = $this->createTester($dispatcher, withFull: false);
+        $status = $tester->execute(['--strict' => true, '--max-size' => $maxSize]);
+
+        self::assertSame(Command::FAILURE, $status);
+        self::assertStringContainsString('over the 10 B of --max-size', preg_replace('/\s+/', ' ', $tester->getDisplay()) ?? '');
+    }
+
+    /**
+     * @return iterable<string, array{int|string}>
+     */
+    public static function provideMaxSizes(): iterable
+    {
+        yield 'string' => ['10'];
+        yield 'integer' => [10];
+    }
+
+    #[DataProvider('provideInvalidMaxSizes')]
+    public function testRejectsAnInvalidMaxSize(mixed $maxSize): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('The --max-size option must be a number of bytes.');
 
-        $this->createTester(new EventDispatcher(), withFull: false)->execute(['--max-size' => '1M']);
+        $this->createTester(new EventDispatcher(), withFull: false)->execute(['--max-size' => $maxSize]);
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function provideInvalidMaxSizes(): iterable
+    {
+        yield 'unit' => ['1M'];
+        yield 'negative string' => ['-1'];
+        yield 'negative integer' => [-1];
+        yield 'float' => [1.5];
     }
 
     private function createTester(EventDispatcher $dispatcher, bool $withFull): CommandTester

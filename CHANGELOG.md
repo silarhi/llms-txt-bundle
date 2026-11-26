@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A usage provider for [shipmonk/dead-code-detector](https://github.com/shipmonk-rnd/dead-code-detector), which reported the link providers as dead code: include `vendor/silarhi/llms-txt-bundle/shipmonk.neon` in your PHPStan configuration. It keeps the methods carrying `#[AsLlmsTxtLinkProvider]`, and the `__invoke()` method or the one `method` names of a class carrying it.
 
+### Fixed
+
+- `debug:llms-txt` accepts a `--max-size` given as an integer, as code passes it (`$tester->execute(['--max-size' => 524288])` in a `CommandTester`, an `ArrayInput`): only a string was accepted.
+
 ## [1.5.0] - 2026-11-26
 
 ### Added
