@@ -14,13 +14,15 @@ declare(strict_types=1);
 namespace Silarhi\LlmsTxtBundle\Service;
 
 use Override;
-use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
 
 use function sprintf;
 
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 
+/**
+ * Writes llms.txt, or llms-full.txt with the full renderer and its filename.
+ */
 final readonly class Dumper implements DumperInterface
 {
     public function __construct(
@@ -28,6 +30,7 @@ final readonly class Dumper implements DumperInterface
         private RendererInterface $renderer,
         private Filesystem $filesystem,
         private string $directory,
+        private string $filename,
     ) {
     }
 
@@ -35,7 +38,7 @@ final readonly class Dumper implements DumperInterface
     public function dump(?string $directory = null): string
     {
         $directory = rtrim($directory ?? $this->directory, '/');
-        $path = $directory . '/' . LlmsTxtBundle::FILENAME;
+        $path = $directory . '/' . $this->filename;
 
         $chunks = $this->renderer->render($this->generator->generate());
 
@@ -43,7 +46,7 @@ final readonly class Dumper implements DumperInterface
         // and a failing listener leaves the previous one in place. Next to the file: a rename is atomic only within
         // a filesystem.
         $this->filesystem->mkdir($directory);
-        $temporary = $this->filesystem->tempnam($directory, '.' . LlmsTxtBundle::FILENAME . '.');
+        $temporary = $this->filesystem->tempnam($directory, '.' . $this->filename . '.');
         try {
             $this->write($temporary, $chunks);
 

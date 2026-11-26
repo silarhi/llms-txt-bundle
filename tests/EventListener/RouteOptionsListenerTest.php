@@ -48,6 +48,63 @@ final class RouteOptionsListenerTest extends TestCase
         self::assertEquals([new Link('https://example.com/legal', 'Legal')], iterator_to_array($document->section('Optional')->getLinks(), false));
     }
 
+    public function testPointsToTheMarkdownVersion(): void
+    {
+        $document = $this->populate([
+            'guide' => new Route('/guide.{_format}', ['_format' => 'html'], options: ['llms_txt' => new LlmsTxtEntry(title: 'Guide', markdown: true)]),
+        ]);
+
+        self::assertEquals([new Link('https://example.com/guide.md', 'Guide')], iterator_to_array($document->section('Pages')->getLinks(), false));
+    }
+
+    /**
+     * @return iterable<string, array{string, array<string, string>, bool|null, bool, string}>
+     */
+    public static function provideMarkdownDetections(): iterable
+    {
+        $formats = ['_format' => 'html|md'];
+        yield 'a Markdown URL' => ['/guide.{_format}', $formats, null, true, 'https://example.com/guide.md'];
+        yield 'a non-capturing group' => ['/guide.{_format}', ['_format' => '(?:md|html)'], null, true, 'https://example.com/guide.md'];
+        yield 'markdown_versions disabled' => ['/guide.{_format}', $formats, null, false, 'https://example.com/guide'];
+        yield 'an Accept-only route' => ['/guide', $formats, null, true, 'https://example.com/guide'];
+        yield 'no "md" in the requirement' => ['/guide.{_format}', ['_format' => 'html|json'], null, true, 'https://example.com/guide'];
+        yield 'a pattern merely matching "md"' => ['/guide.{_format}', ['_format' => '[a-z]+'], null, true, 'https://example.com/guide'];
+        yield 'markdown: false' => ['/guide.{_format}', $formats, false, true, 'https://example.com/guide'];
+        yield 'markdown: true without the requirement' => ['/guide.{_format}', [], true, false, 'https://example.com/guide.md'];
+    }
+
+    /**
+     * @param array<string, string> $requirements
+     */
+    #[DataProvider('provideMarkdownDetections')]
+    public function testDetectsTheMarkdownVersion(string $path, array $requirements, ?bool $markdown, bool $markdownVersions, string $url): void
+    {
+        $document = $this->populate([
+            'guide' => new Route($path, ['_format' => 'html'], $requirements, ['llms_txt' => new LlmsTxtEntry(title: 'Guide', markdown: $markdown)]),
+        ], markdownVersions: $markdownVersions);
+
+        self::assertEquals([new Link($url, 'Guide')], iterator_to_array($document->section('Pages')->getLinks(), false));
+    }
+
+    public function testNeedsAFormatInThePathForTheMarkdownVersion(): void
+    {
+        $this->expectException(InvalidRouteOptionException::class);
+        $this->expectExceptionMessage('The "llms_txt" option of the route "guide" points to the Markdown version of the page, but its path has no {_format}: add ".{_format}" to "/guide".');
+
+        $this->populate(['guide' => new Route('/guide', options: ['llms_txt' => ['title' => 'Guide', 'markdown' => true]])]);
+    }
+
+    public function testReadsTheCachesWithoutTheMarkdownFlag(): void
+    {
+        $cacheDir = $this->getCacheDir();
+        // the cache 1.4 wrote, still fresh after an upgrade without cache:clear
+        (new Filesystem())->dumpFile($cacheDir . '/llms_txt_routes.php', "<?php return [['contact', 'Contact', null, null]];\n");
+
+        $document = $this->populate(['contact' => new Route('/contact')], $cacheDir);
+
+        self::assertEquals([new Link('https://example.com/contact', 'Contact')], iterator_to_array($document->section('Pages')->getLinks(), false));
+    }
+
     /**
      * @return iterable<string, array{mixed, string}>
      */
@@ -179,12 +236,12 @@ final class RouteOptionsListenerTest extends TestCase
     /**
      * @param array<string, Route> $routes
      */
-    private function populate(array $routes, ?string $cacheDir = null): Document
+    private function populate(array $routes, ?string $cacheDir = null, bool $markdownVersions = true): Document
     {
         $router = $this->createRouter($routes, null === $cacheDir ? null : $this->getCacheDir() . '/router');
         $listener = null === $cacheDir
-            ? new RouteOptionsListener($router, 'Pages')
-            : new RouteOptionsListener($router, 'Pages', new ConfigCacheFactory(false), $cacheDir);
+            ? new RouteOptionsListener($router, 'Pages', markdownVersions: $markdownVersions)
+            : new RouteOptionsListener($router, 'Pages', new ConfigCacheFactory(false), $cacheDir, $markdownVersions);
 
         $document = new Document('Example');
         $listener->populate(new LlmsTxtPopulateEvent($document));

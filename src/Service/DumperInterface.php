@@ -19,7 +19,7 @@ use Symfony\Component\Filesystem\Exception\IOException;
 interface DumperInterface
 {
     /**
-     * Writes the llms.txt file into the directory, the configured dump directory by default.
+     * Writes the file (llms.txt, or llms-full.txt) into the directory, the configured dump directory by default.
      *
      * @return string the path of the written file
      *

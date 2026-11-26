@@ -19,24 +19,35 @@ and a command dumps it.
 
 ```
 src/
-├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url])
-├── Controller/         # LlmsTxtController: serves the dumped file, or renders it whole into a php://temp buffer
+├── Attribute/          # AsLlmsTxtLinkProvider (class or method, repeatable): adds the llms_txt.link_provider tag
+├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url]: llms.txt, and llms-full.txt when enabled),
+│                       #   DebugCommand (debug:llms-txt [--strict] [--format=json] [--max-size])
+├── Controller/         # LlmsTxtController (two services: llms.txt, llms-full.txt): serves the dumped file, or renders it whole into a php://temp buffer
 │                       #   (Content-Length, ETag, 304) before responding
-├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link
+├── Debug/              # @internal, for debug:llms-txt: Inspector (builds the Report), SourceDescriber (the listeners),
+│                       #   LinkChecker (counts, duplicates, relative URLs, host, titles), Report, Source, SectionStats,
+│                       #   DumpedFile, LinkCheck (read-only results)
+├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link,
+│                       #   LinkProviderPass: one LinkProviderListener per llms_txt.link_provider tag,
+│                       #   MarkdownEscapingPass: MarkdownEscapingStrategy as Twig's autoescape, with markdown_versions
 ├── Event/              # LlmsTxtPopulateEvent
-├── EventListener/      # RouteOptionsListener (the "llms_txt" route option),
+├── EventListener/      # RouteOptionsListener (the "llms_txt" route option), LinkProviderListener (one link provider),
+│                       #   MarkdownVersionListener (md format, Accept negotiation, Vary, rel="alternate" of the
+│                       #   Markdown routes),
 │                       #   DiscoveryLinkListener (Link header of HTML pages, through WebLink's "_links")
 ├── Exception/          # LlmsTxtExceptionInterface and implementations
-├── Model/              # Document, Section (links or lazy iterables of links), Link
-├── Routing/            # LlmsTxtEntry: the "llms_txt" route option as an object (fromArray() for YAML/XML routes)
-├── Service/            # Generator (+ interface), MarkdownRenderer (+ RendererInterface), Dumper (+ interface),
+├── Model/              # Document, Section (links or lazy iterables of links), Link (+ content for llms-full.txt)
+├── Routing/            # LlmsTxtEntry: the "llms_txt" route option as an object (fromArray() for YAML/XML routes),
+│                       #   MarkdownRoutes (@internal: the routes whose "_format" requirement lists "md", cached)
+├── Service/            # Generator (+ interface), MarkdownRenderer, FullMarkdownRenderer (+ RendererInterface),
+│                       #   Markdown (@internal: inline text, escaping, section order, chunks), Dumper (+ interface),
 │                       #   UrlGenerator (absolute URL of the file, for discovery)
-├── Twig/               # LlmsTxtExtension (llms_txt_url, llms_txt_link)
+├── Twig/               # LlmsTxtExtension (llms_txt_url, llms_txt_link), MarkdownEscapingStrategy (no escaping in *.md.twig)
 └── LlmsTxtBundle.php   # Bundle class with configuration tree and service wiring
 config/
-└── routes.php          # GET|HEAD /llms.txt
+└── routes.php          # GET|HEAD /llms.txt, /llms-full.txt (404 unless full.enabled)
 tests/                  # PHPUnit tests mirroring src/, Functional/ (LlmsTxtTest, FlatMemoryTest),
-                        #   Fixtures/ (TestKernel, PopulateSubscriber, PageController,
+                        #   Fixtures/ (TestKernel, PopulateSubscriber, CatalogLinks, PageController (an HTML and Markdown action),
                         #   FailingStreamWrapper, FailingPhpStreamWrapper, templates/)
 ```
 
@@ -100,6 +111,35 @@ composer normalize
   `ConfigCache` tracking the collection's resources like the router's own cache. It is also an optional cache warmer.
   URLs are still generated per request (they depend on the request context). Without the cache factory and directory
   (the 2-argument constructor), or when the file cannot be written, it reads the collection as before.
+- **Link providers are event listeners.** `#[AsLlmsTxtLinkProvider]` (autoconfigured in `loadExtension()`, the
+  reflector typed `ReflectionClass|ReflectionMethod` since Symfony reads the targets from it) only adds the
+  `llms_txt.link_provider` tag `{section, method, priority}`. `LinkProviderPass` (before optimization, after the
+  autoconfiguration, before `RegisterListenersPass`) validates each tag and registers a `LinkProviderListener` tagged
+  `kernel.event_listener` with the provider's priority: providers and hand-written listeners share one order. The
+  provider is a `Closure::fromCallable()` definition; the listener checks the result is iterable, not each link.
+- **llms-full.txt** reuses everything: the same document and listeners, `FullMarkdownRenderer` instead of
+  `MarkdownRenderer`, a second controller and dumper with `FULL_FILENAME`. `Link::$content` (a string, or a closure
+  returning a string or `iterable<string>`) is only read by the full renderer: the closure spares `llms.txt` building
+  the pages. Its route is always in `routes.php`; the controller answers 404 while `full.enabled` is false.
+- **Markdown versions are a route requirement.** With `markdown_versions` (off by default), a route whose `_format`
+  requirement names `md` among its `|` alternatives (`MarkdownRoutes::accepts()`: a pattern merely matching `md`, such
+  as `[a-z]+`, does not opt in) has a Markdown version: at its `.md` URL with `{_format}` in the path, Accept-only
+  without (the router ignores a requirement on a variable not in the path). `MarkdownRoutes` caches the names in
+  `%kernel.build_dir%/llms_txt_markdown_routes.php` (a `ConfigCache` on the collection resources, also a cache
+  warmer). `MarkdownVersionListener` (`kernel.request` 16, after the router) registers the `md` format on the request
+  (static, unless the app maps it), switches `_format` to `md` when `Accept` lists a Markdown type before an HTML one
+  (wildcards ignored); on the response, `Vary: Accept` and the WebLink `alternate` link on HTML main requests (the
+  `.md` URL, or the page URL when `_format` lands in the query string). `MarkdownEscapingPass` swaps Twig's `autoescape`
+  `'name'` (TwigBundle's value without `autoescape_service`) for `[MarkdownEscapingStrategy::class, 'guess']`: an array,
+  since the compiled container cannot dump a closure and Twig ignores string callables (Rector's
+  `ArrayToFirstClassCallableRector` is skipped there). `LlmsTxtEntry::$markdown` `null` follows the requirement:
+  the route options cache stores the option (5th element) and whether the route has a `.md` URL (6th), the toggle is
+  applied in `populate()` since the cache does not follow the configuration; a 1.4 cache (4 elements) still works.
+- **`debug:llms-txt` only reads options and prints**: `Debug\Inspector` builds the `Report` (read-only objects,
+  `JsonSerializable` for `--format=json`). It builds the document up to three times (checks, llms.txt size,
+  llms-full.txt size): links given as generators can be read once. `SourceDescriber` reads
+  `getListeners(LlmsTxtPopulateEvent::class)` and unwraps the debug mode's `WrappedListener`; `LinkChecker` reads
+  every link once and keeps the URLs (not the links) to find duplicates. The `Debug\` classes are `@internal`.
 - **Discovery** goes through WebLink: `DiscoveryLinkListener` (priority 8) adds a link to the request's `_links`, which
   WebLink's `AddLinkHeaderListener` (priority 0) serializes with the other links. Only successful HTML main requests
   (not XHR, Turbo Frames, redirects, errors, other formats).
@@ -110,10 +150,11 @@ composer normalize
 
 ## Domain Exceptions
 
-| Exception                     | Thrown when                                                                     |
-| ----------------------------- | ------------------------------------------------------------------------------- |
-| `MissingTitleException`       | The document has no title (`llms_txt.title` unset and no listener sets it)      |
-| `InvalidRouteOptionException` | A route's `llms_txt` option is invalid, or set on a route that needs parameters |
+| Exception                      | Thrown when                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| `MissingTitleException`        | The document has no title (`llms_txt.title` unset and no listener sets it)      |
+| `InvalidRouteOptionException`  | A route's `llms_txt` option is invalid, or set on a route that needs parameters |
+| `InvalidLinkProviderException` | A `llms_txt.link_provider` tag is invalid, or its provider returns no iterable  |
 
 All implement `LlmsTxtExceptionInterface`.
 
@@ -157,8 +198,9 @@ Lightweight tag `vX.Y.Z` on `origin/main` once CI is green, with a GitHub releas
 
 ## Common Patterns
 
-- **Adding links**: a listener of `LlmsTxtPopulateEvent` calls `$event->getDocument()->addLinks($section, $generator)`;
-  `addLink()` only for a handful of links.
+- **Adding links**: `#[AsLlmsTxtLinkProvider(section: …)]` on a method returning `iterable<Link>` (a generator for
+  large sections); a `LlmsTxtPopulateEvent` listener to change the document itself, which calls
+  `$event->getDocument()->addLinks($section, $generator)`, `addLink()` only for a handful of links.
 - **Static pages**: `options: ['llms_txt' => new LlmsTxtEntry(title: …, description: …, section: …)]` on the route;
   the array form (`{title, description, section}`) for YAML/XML routes, both validated by `LlmsTxtEntry`.
 - **Bundle configuration**: all options are defined in `LlmsTxtBundle::configure()` and wired in

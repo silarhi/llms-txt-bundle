@@ -27,7 +27,8 @@ use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
 /**
- * Framework + Twig + the bundle, with the discovery header on and the file dumped into the cache directory.
+ * Framework + Twig + the bundle, with the discovery header and llms-full.txt on, the files dumped into the cache
+ * directory.
  */
 final class TestKernel extends Kernel
 {
@@ -90,11 +91,14 @@ final class TestKernel extends Kernel
             'title' => 'Example',
             'summary' => 'An example site.',
             'dump_directory' => '%kernel.cache_dir%/llms_txt',
+            'full' => true,
+            'markdown_versions' => true,
             'discovery' => ['link_header' => true],
         ]);
 
         $services = $container->services();
         $services->set(PopulateSubscriber::class)->autowire()->autoconfigure();
+        $services->set(CatalogLinks::class)->autoconfigure();
         $services->set(PageController::class)->autowire()->autoconfigure()->tag('controller.service_arguments');
     }
 
@@ -108,6 +112,16 @@ final class TestKernel extends Kernel
         $routes->add('legal', '/legal')
             ->controller([PageController::class, 'html'])
             ->options(['llms_txt' => ['title' => 'Legal notice', 'section' => 'Optional']]);
+        $routes->add('guide', '/guide.{_format}')
+            ->controller([PageController::class, 'guide'])
+            ->defaults(['_format' => 'html'])
+            ->requirements(['_format' => 'html|md'])
+            ->options(['llms_txt' => new LlmsTxtEntry(title: 'Guide')]);
+        // Accept-only: the requirement opts in, there is no {_format} in the path
+        $routes->add('faq', '/faq')
+            ->controller([PageController::class, 'guide'])
+            ->defaults(['_format' => 'html'])
+            ->requirements(['_format' => 'html|md']);
         $routes->add('json', '/json')
             ->controller([PageController::class, 'json']);
     }

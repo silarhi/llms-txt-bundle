@@ -55,11 +55,25 @@ final class DumpCommandTest extends TestCase
         $this->createTester(new RequestContext())->execute(['--base-url' => '/app']);
     }
 
+    public function testDumpsTheFullFileToo(): void
+    {
+        $dumper = self::createStub(DumperInterface::class);
+        $dumper->method('dump')->willReturn('/var/www/public/llms.txt');
+        $fullDumper = $this->createMock(DumperInterface::class);
+        $fullDumper->expects(self::once())->method('dump')->with('/tmp/out')->willReturn('/tmp/out/llms-full.txt');
+
+        $tester = new CommandTester(new DumpCommand($dumper, new UrlGenerator(new RouteCollection(), new RequestContext()), $fullDumper));
+        $tester->execute(['target' => '/tmp/out']);
+
+        $tester->assertCommandIsSuccessful();
+        self::assertStringContainsString('Dumped "/var/www/public/llms.txt", "/tmp/out/llms-full.txt".', $tester->getDisplay());
+    }
+
     private function createTester(RequestContext $context): CommandTester
     {
         $dumper = self::createStub(DumperInterface::class);
         $dumper->method('dump')->willReturn('/var/www/public/llms.txt');
 
-        return new CommandTester(new DumpCommand($dumper, new UrlGenerator(new RouteCollection(), $context)));
+        return new CommandTester(new DumpCommand($dumper, new UrlGenerator(new RouteCollection(), $context), null));
     }
 }

@@ -29,15 +29,41 @@ final class LlmsTxtTest extends WebTestCase
         ## Pages
 
         - [Contact](https://example.com/contact): How to reach us
+        - [Guide](https://example.com/guide.md)
         - [About](https://example.com/about)
 
         ## Offers
 
         - [First offer](https://example.com/contact?offer=first): The first one
+        - [Second offer](https://example.com/offers/second)
+
+        ## Blog
+
+        - [Blog](https://example.com/blog): The latest posts
 
         ## Optional
 
         - [Legal notice](https://example.com/legal)
+
+        MD;
+
+    private const EXPECTED_FULL = <<<'MD'
+        # Example
+
+        > An example site.
+
+        # Second offer
+
+        Source: https://example.com/offers/second
+
+        Half price,
+        this week.
+
+        # Blog
+
+        Source: https://example.com/blog
+
+        ## Posts
 
         MD;
 
@@ -59,6 +85,16 @@ final class LlmsTxtTest extends WebTestCase
         self::assertSame(self::EXPECTED, $client->getInternalResponse()->getContent());
     }
 
+    public function testServesTheFullFileOnTheFly(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', 'https://example.com/llms-full.txt');
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'text/plain; charset=UTF-8');
+        self::assertSame(self::EXPECTED_FULL, $client->getInternalResponse()->getContent());
+    }
+
     public function testDumpsTheFileThenServesIt(): void
     {
         $client = self::createClient();
@@ -74,6 +110,66 @@ final class LlmsTxtTest extends WebTestCase
         $client->request('GET', 'https://example.com/llms.txt');
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('https://www.example.org/contact', $client->getInternalResponse()->getContent());
+
+        self::assertFileExists($kernel->getCacheDir() . '/llms_txt/llms-full.txt');
+    }
+
+    public function testServesTheMarkdownVersionAtItsPath(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', 'https://example.com/guide.md');
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'text/markdown; charset=UTF-8');
+        self::assertResponseHeaderSame('Vary', 'Accept');
+        self::assertResponseNotHasHeader('Link');
+        self::assertSame("# Guide & FAQ\n", $client->getInternalResponse()->getContent());
+    }
+
+    public function testServesTheMarkdownVersionToAnAcceptHeaderPreferringIt(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', 'https://example.com/guide', server: ['HTTP_ACCEPT' => 'text/markdown, text/html;q=0.9']);
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'text/markdown; charset=UTF-8');
+        self::assertSame("# Guide & FAQ\n", $client->getInternalResponse()->getContent());
+    }
+
+    public function testLinksTheHtmlPageToItsMarkdownVersion(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', 'https://example.com/guide', server: ['HTTP_ACCEPT' => 'text/html,application/xhtml+xml,*/*;q=0.8']);
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'text/html; charset=UTF-8');
+        self::assertResponseHeaderSame('Vary', 'Accept');
+        self::assertStringContainsString('<https://example.com/guide.md>; rel="alternate"; type="text/markdown"', (string) $client->getResponse()->headers->get('Link'));
+    }
+
+    public function testLinksAPageWithoutFormatInItsPathToItself(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', 'https://example.com/faq');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('<https://example.com/faq>; rel="alternate"; type="text/markdown"', (string) $client->getResponse()->headers->get('Link'));
+
+        $client->request('GET', 'https://example.com/faq', server: ['HTTP_ACCEPT' => 'text/markdown']);
+        self::assertResponseHeaderSame('Content-Type', 'text/markdown; charset=UTF-8');
+        self::assertSame("# Guide & FAQ\n", $client->getInternalResponse()->getContent());
+    }
+
+    public function testDebugsTheFile(): void
+    {
+        $tester = new CommandTester((new Application(self::bootKernel()))->find('debug:llms-txt'));
+        $tester->execute(['--strict' => true]);
+
+        $tester->assertCommandIsSuccessful();
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('route options', $display);
+        self::assertStringContainsString('Silarhi\LlmsTxtBundle\Tests\Fixtures\CatalogLinks::offers', $display);
+        self::assertStringContainsString('No problem found.', $display);
     }
 
     public function testAdvertisesTheFileOnHtmlPages(): void

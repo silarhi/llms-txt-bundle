@@ -19,8 +19,10 @@ use Override;
 use Silarhi\LlmsTxtBundle\Event\LlmsTxtPopulateEvent;
 use Silarhi\LlmsTxtBundle\Exception\InvalidRouteOptionException;
 use Silarhi\LlmsTxtBundle\Exception\LlmsTxtExceptionInterface;
+use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
 use Silarhi\LlmsTxtBundle\Model\Link;
 use Silarhi\LlmsTxtBundle\Routing\LlmsTxtEntry;
+use Silarhi\LlmsTxtBundle\Routing\MarkdownRoutes;
 
 use function sprintf;
 
@@ -31,6 +33,7 @@ use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\Routing\Exception\MissingMandatoryParametersException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouterInterface;
 
 /**
@@ -49,6 +52,7 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface, C
         private string $defaultSection,
         private ?ConfigCacheFactoryInterface $configCacheFactory = null,
         private ?string $cacheDir = null,
+        private bool $markdownVersions = false,
     ) {
     }
 
@@ -85,8 +89,12 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface, C
     public function populate(LlmsTxtPopulateEvent $event): void
     {
         $document = $event->getDocument();
-        foreach ($this->getEntries($this->cacheDir) as [$name, $title, $description, $section]) {
-            $document->section($section ?? $this->defaultSection)->addLink(new Link($this->generateUrl($name), $title, $description));
+        foreach ($this->getEntries($this->cacheDir) as $entry) {
+            [$name, $title, $description, $section] = $entry;
+            // read when the file is built, not cached: the cache does not follow the configuration
+            $markdown = $entry[4] ?? ($this->markdownVersions && ($entry[5] ?? false));
+            $url = $this->generateUrl($name, $markdown);
+            $document->section($section ?? $this->defaultSection)->addLink(new Link($url, $title, $description));
         }
     }
 
@@ -94,7 +102,10 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface, C
      * The routes carrying the option, cached next to the compiled routes like the router does: loading the route
      * collection (every attribute, YAML or XML file of the application) costs far more than the file itself.
      *
-     * @return list<array{string, string, string|null, string|null}> name, title, description, section
+     * Each entry: name, title, description, section, the "markdown" of the option, whether the route has a Markdown URL
+     * (the last two are missing from the caches of 1.4).
+     *
+     * @return list<array{0: string, 1: string, 2: string|null, 3: string|null, 4?: bool|null, 5?: bool}>
      */
     private function getEntries(?string $cacheDir): array
     {
@@ -111,14 +122,14 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface, C
             return $this->collectEntries();
         }
 
-        /** @var list<array{string, string, string|null, string|null}> $entries */
+        /** @var list<array{0: string, 1: string, 2: string|null, 3: string|null, 4?: bool|null, 5?: bool}> $entries */
         $entries = require $cache->getPath();
 
         return $entries;
     }
 
     /**
-     * @return list<array{string, string, string|null, string|null}>
+     * @return list<array{0: string, 1: string, 2: string|null, 3: string|null, 4?: bool|null, 5?: bool}>
      */
     private function collectEntries(): array
     {
@@ -130,7 +141,13 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface, C
             }
 
             $entry = $this->createEntry($name, $option);
-            $entries[] = [$name, $entry->title, $entry->description, $entry->section];
+            $hasFormat = str_contains($route->getPath(), '{_format}');
+            if (true === $entry->markdown && !$hasFormat) {
+                throw new InvalidRouteOptionException(sprintf('The "%s" option of the route "%s" points to the Markdown version of the page, but its path has no {_format}: add ".{_format}" to "%s".', self::OPTION, $name, $route->getPath()));
+            }
+
+            // the Markdown version has a URL of its own: an Accept-only route keeps the URL of the page
+            $entries[] = [$name, $entry->title, $entry->description, $entry->section, $entry->markdown, $hasFormat && MarkdownRoutes::accepts($route)];
         }
 
         return $entries;
@@ -153,12 +170,12 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface, C
         }
     }
 
-    private function generateUrl(string $route): string
+    private function generateUrl(string $route, bool $markdown): string
     {
         try {
-            return $this->router->generate($route, [], UrlGeneratorInterface::ABSOLUTE_URL);
+            return $this->router->generate($route, $markdown ? ['_format' => LlmsTxtBundle::MARKDOWN_FORMAT] : [], UrlGeneratorInterface::ABSOLUTE_URL);
         } catch (MissingMandatoryParametersException $exception) {
-            throw new InvalidRouteOptionException(sprintf('The route "%s" has the "%s" option but needs parameters: add its URLs from a LlmsTxtPopulateEvent listener instead.', $route, self::OPTION), $exception->getCode(), previous: $exception);
+            throw new InvalidRouteOptionException(sprintf('The route "%s" has the "%s" option but needs parameters: add its URLs from a link provider (#[AsLlmsTxtLinkProvider]) instead.', $route, self::OPTION), $exception->getCode(), previous: $exception);
         }
     }
 }

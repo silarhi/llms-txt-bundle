@@ -20,6 +20,7 @@ use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
 use Silarhi\LlmsTxtBundle\Event\LlmsTxtPopulateEvent;
 use Silarhi\LlmsTxtBundle\Model\Link;
 use Silarhi\LlmsTxtBundle\Service\Dumper;
+use Silarhi\LlmsTxtBundle\Service\FullMarkdownRenderer;
 use Silarhi\LlmsTxtBundle\Service\Generator as LlmsTxtGenerator;
 use Silarhi\LlmsTxtBundle\Service\MarkdownRenderer;
 
@@ -57,7 +58,7 @@ final class FlatMemoryTest extends TestCase
 
     public function testDumpsWithAFlatMemory(): void
     {
-        $dumper = new Dumper($this->createGenerator(), new MarkdownRenderer(), new Filesystem(), $this->directory);
+        $dumper = new Dumper($this->createGenerator(), new MarkdownRenderer(), new Filesystem(), $this->directory, 'llms.txt');
 
         memory_reset_peak_usage();
         $before = memory_get_usage();
@@ -68,9 +69,25 @@ final class FlatMemoryTest extends TestCase
         self::assertLessThan(self::MAX_GROWTH, $growth, sprintf('The dump took %.1f MB', $growth / 1024 / 1024));
     }
 
+    /**
+     * A string content does not pile up either: each link, and its page, is released once written.
+     */
+    public function testDumpsTheFullFileWithAFlatMemory(): void
+    {
+        $dumper = new Dumper($this->createGenerator(content: true), new FullMarkdownRenderer(), new Filesystem(), $this->directory, 'llms-full.txt');
+
+        memory_reset_peak_usage();
+        $before = memory_get_usage();
+        $path = $dumper->dump();
+        $growth = memory_get_peak_usage() - $before;
+
+        self::assertGreaterThan(50 * 1024 * 1024, filesize($path));
+        self::assertLessThan(self::MAX_GROWTH, $growth, sprintf('The dump took %.1f MB', $growth / 1024 / 1024));
+    }
+
     public function testStreamsWithAFlatMemory(): void
     {
-        $controller = new LlmsTxtController($this->createGenerator(), new MarkdownRenderer(), $this->directory, 'text/plain', 0);
+        $controller = new LlmsTxtController($this->createGenerator(), new MarkdownRenderer(), $this->directory, 'text/plain', 0, 'llms.txt', true);
 
         $bytes = 0;
         memory_reset_peak_usage();
@@ -92,13 +109,21 @@ final class FlatMemoryTest extends TestCase
         self::assertLessThan(self::MAX_GROWTH, $growth, sprintf('The response took %.1f MB', $growth / 1024 / 1024));
     }
 
-    private function createGenerator(): LlmsTxtGenerator
+    /**
+     * @param bool $content each link with the Markdown of its page, about 300 bytes
+     */
+    private function createGenerator(bool $content = false): LlmsTxtGenerator
     {
         $dispatcher = new EventDispatcher();
-        $dispatcher->addListener(LlmsTxtPopulateEvent::class, static function (LlmsTxtPopulateEvent $event): void {
-            $event->getDocument()->addLinks('Offers', (static function (): Generator {
+        $dispatcher->addListener(LlmsTxtPopulateEvent::class, static function (LlmsTxtPopulateEvent $event) use ($content): void {
+            $event->getDocument()->addLinks('Offers', (static function () use ($content): Generator {
                 for ($i = 0; $i < self::LINKS; ++$i) {
-                    yield new Link('https://example.com/offers/' . $i, 'Offer ' . $i, 'The description of the offer ' . $i);
+                    yield new Link(
+                        'https://example.com/offers/' . $i,
+                        'Offer ' . $i,
+                        'The description of the offer ' . $i,
+                        $content ? str_repeat('The page of the offer ' . $i . ".\n", 10) : null,
+                    );
                 }
             })());
         });

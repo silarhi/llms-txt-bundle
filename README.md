@@ -33,10 +33,14 @@
 
 ## Features
 
-- **Event driven**: listeners of `LlmsTxtPopulateEvent` add the links, from your repositories, like `SitemapPopulateEvent`
+- **Link providers**: a `#[AsLlmsTxtLinkProvider(section: 'Products')]` method returns the links of a section, from your repositories
+- **Event driven**: listeners of `LlmsTxtPopulateEvent` change the whole document, like `SitemapPopulateEvent`
 - **Route options**: static pages join the file with an `llms_txt` route option, like the `sitemap` one
 - **On the fly or dumped**: the controller serves the dumped file when there is one, and builds it otherwise
 - **Flat memory**: links added as generators are read one at a time, streamed to the response or the dumped file
+- **llms-full.txt**: the Markdown of the pages, next to `llms.txt`, from the `content` of their links
+- **Markdown versions**: a route accepting the `md` format serves its page at `page.md`, and to the agents asking for `text/markdown`
+- **Checks**: `debug:llms-txt` shows where the links come from, and finds duplicates, relative URLs, a file too large
 - **Spec compliant**: H1 title, blockquote summary, H2 sections of links, the `Optional` section always last, escaped links
 - **Discovery**: a `<link>` tag for the `<head>` of your pages and an opt-in `Link` header, through [WebLink](https://symfony.com/doc/current/web_link.html)
 
@@ -76,7 +80,7 @@ public function contact(): Response
 ```
 
 `GET /llms.txt` now lists the contact page. Add the pages of your database from
-[an event listener](https://llms-txt-bundle.silarhi.dev/guides/event-listener/), or dump the file with
+[a link provider](https://llms-txt-bundle.silarhi.dev/guides/link-providers/), or dump the file with
 `php bin/console llms-txt:dump`.
 
 ## Documentation
@@ -84,8 +88,9 @@ public function contact(): Response
 Everything else is on **[llms-txt-bundle.silarhi.dev](https://llms-txt-bundle.silarhi.dev)**:
 
 - [Installation](https://llms-txt-bundle.silarhi.dev/getting-started/installation/) and [configuration reference](https://llms-txt-bundle.silarhi.dev/getting-started/configuration/)
-- Adding links: [event listeners](https://llms-txt-bundle.silarhi.dev/guides/event-listener/), [generators](https://llms-txt-bundle.silarhi.dev/guides/generators/) for large sections, [route options](https://llms-txt-bundle.silarhi.dev/guides/route-options/)
-- [Serving the file](https://llms-txt-bundle.silarhi.dev/guides/serving/), on the fly or dumped
+- Adding links: [link providers](https://llms-txt-bundle.silarhi.dev/guides/link-providers/), [event listeners](https://llms-txt-bundle.silarhi.dev/guides/event-listener/), [generators](https://llms-txt-bundle.silarhi.dev/guides/generators/) for large sections, [route options](https://llms-txt-bundle.silarhi.dev/guides/route-options/)
+- [llms-full.txt](https://llms-txt-bundle.silarhi.dev/guides/llms-full/) and [Markdown versions](https://llms-txt-bundle.silarhi.dev/guides/markdown-versions/) of the pages
+- [Serving the file](https://llms-txt-bundle.silarhi.dev/guides/serving/), on the fly or dumped, and [checking it](https://llms-txt-bundle.silarhi.dev/guides/debug/)
 - [Discovery](https://llms-txt-bundle.silarhi.dev/guides/discovery/): `<link>` tag and `Link` header
 
 ## Contributing

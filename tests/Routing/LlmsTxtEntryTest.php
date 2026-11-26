@@ -38,6 +38,9 @@ final class LlmsTxtEntryTest extends TestCase
             new LlmsTxtEntry('CGU', 'Terms of use', 'Optional'),
             LlmsTxtEntry::fromArray(['title' => 'CGU', 'description' => 'Terms of use', 'section' => 'Optional']),
         );
+        self::assertNull(LlmsTxtEntry::fromArray(['title' => 'Guide'])->markdown);
+        self::assertEquals(new LlmsTxtEntry('Guide', markdown: true), LlmsTxtEntry::fromArray(['title' => 'Guide', 'markdown' => true]));
+        self::assertEquals(new LlmsTxtEntry('Guide', markdown: false), LlmsTxtEntry::fromArray(['title' => 'Guide', 'markdown' => false]));
     }
 
     /**
@@ -51,6 +54,7 @@ final class LlmsTxtEntryTest extends TestCase
         yield 'unknown key' => [['title' => 'Contact', 'priority' => 1], 'unknown keys "priority", allowed: "title", "description", "section"'];
         yield 'description of the wrong type' => [['title' => 'Contact', 'description' => 1], 'The "description" of an llms.txt entry must be a string, "int" given'];
         yield 'empty section' => [['title' => 'Contact', 'section' => ''], 'The "section" of an llms.txt entry must be a non-empty string'];
+        yield 'markdown of the wrong type' => [['title' => 'Guide', 'markdown' => 'yes'], 'The "markdown" of an llms.txt entry must be a boolean or null, "string" given'];
         yield 'section of the wrong type' => [['title' => 'Contact', 'section' => true], 'The "section" of an llms.txt entry must be a non-empty string, "bool" given'];
     }
 

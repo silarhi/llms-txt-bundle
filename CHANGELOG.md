@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - Unreleased
+
+### Added
+
+- `#[AsLlmsTxtLinkProvider(section: 'Products')]` registers a method returning the links of a section, without writing a `LlmsTxtPopulateEvent` listener: on a method (one service can feed several sections), or on a class for its `__invoke()` method. A `priority` orders providers and listeners together. The attribute adds the `llms_txt.link_provider` tag, which services can also carry by hand. An invalid provider fails with `InvalidLinkProviderException`.
+- `llms-full.txt`, the Markdown of the pages: `Link` takes a `content` (a string, or a closure returning a string or an iterable of strings, only called when that file is rendered), and the file lists each page with a content under its title and its source URL. `full: true` enables it: `GET /llms-full.txt` (in `routes.php`, `404` while disabled), and `llms-txt:dump` writes it next to `llms.txt`.
+- Markdown versions of the pages, with `markdown_versions: true`: a route whose `_format` requirement lists `md` (`requirements: ['_format' => 'html|md']`) answers Markdown at its `.md` URL, and to an `Accept` header preferring `text/markdown` to `text/html`, without `{_format}` in its path too. The bundle registers the `md` request format (`text/markdown`), adds `Vary: Accept`, links the HTML page to its Markdown version (`rel="alternate"`, through WebLink), and stops Twig from escaping HTML in the `*.md.twig` templates. The link of a route carrying an `llms_txt` option points to its `.md` URL; `LlmsTxtEntry` takes `markdown: true` or `false` to force or prevent it.
+- `debug:llms-txt` lists the sources of the links (route options, link providers, listeners) with their priority, the sections and the size of the files, and warns about duplicate or relative URLs, another host, empty titles or sections, and a file over `--max-size` (1 MiB by default). `--strict` fails on a warning, `--format=json` for a CI.
+
 ## [1.4.0] - 2026-10-29
 
 ### Security
@@ -51,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Document::addLinks()` takes an iterable read only while the file is rendered: with a generator, the memory stays flat whatever the number of links.
 - Discovery: the `llms_txt_link()` and `llms_txt_url()` Twig functions, and an opt-in `Link` header on HTML pages through WebLink (`discovery.link_header`).
 
+[1.5.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.4.0...HEAD
 [1.4.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.1.1...v1.2.0
