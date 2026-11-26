@@ -34,6 +34,11 @@ final class LlmsTxtTest extends WebTestCase
         ## Offers
 
         - [First offer](https://example.com/contact?offer=first): The first one
+        - [Second offer](https://example.com/offers/second)
+
+        ## Blog
+
+        - [Blog](https://example.com/blog): The latest posts
 
         ## Optional
 

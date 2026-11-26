@@ -158,7 +158,7 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface, C
         try {
             return $this->router->generate($route, [], UrlGeneratorInterface::ABSOLUTE_URL);
         } catch (MissingMandatoryParametersException $exception) {
-            throw new InvalidRouteOptionException(sprintf('The route "%s" has the "%s" option but needs parameters: add its URLs from a LlmsTxtPopulateEvent listener instead.', $route, self::OPTION), $exception->getCode(), previous: $exception);
+            throw new InvalidRouteOptionException(sprintf('The route "%s" has the "%s" option but needs parameters: add its URLs from a link provider (#[AsLlmsTxtLinkProvider]) instead.', $route, self::OPTION), $exception->getCode(), previous: $exception);
         }
     }
 }

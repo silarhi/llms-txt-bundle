@@ -19,12 +19,14 @@ and a command dumps it.
 
 ```
 src/
+├── Attribute/          # AsLlmsTxtLinkProvider (class or method, repeatable): adds the llms_txt.link_provider tag
 ├── Command/            # DumpCommand (llms-txt:dump [target] [--base-url])
 ├── Controller/         # LlmsTxtController: serves the dumped file, or renders it whole into a php://temp buffer
 │                       #   (Content-Length, ETag, 304) before responding
-├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link
+├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link,
+│                       #   LinkProviderPass: one LinkProviderListener per llms_txt.link_provider tag
 ├── Event/              # LlmsTxtPopulateEvent
-├── EventListener/      # RouteOptionsListener (the "llms_txt" route option),
+├── EventListener/      # RouteOptionsListener (the "llms_txt" route option), LinkProviderListener (one link provider),
 │                       #   DiscoveryLinkListener (Link header of HTML pages, through WebLink's "_links")
 ├── Exception/          # LlmsTxtExceptionInterface and implementations
 ├── Model/              # Document, Section (links or lazy iterables of links), Link
@@ -36,7 +38,7 @@ src/
 config/
 └── routes.php          # GET|HEAD /llms.txt
 tests/                  # PHPUnit tests mirroring src/, Functional/ (LlmsTxtTest, FlatMemoryTest),
-                        #   Fixtures/ (TestKernel, PopulateSubscriber, PageController,
+                        #   Fixtures/ (TestKernel, PopulateSubscriber, CatalogLinks, PageController,
                         #   FailingStreamWrapper, FailingPhpStreamWrapper, templates/)
 ```
 
@@ -100,6 +102,12 @@ composer normalize
   `ConfigCache` tracking the collection's resources like the router's own cache. It is also an optional cache warmer.
   URLs are still generated per request (they depend on the request context). Without the cache factory and directory
   (the 2-argument constructor), or when the file cannot be written, it reads the collection as before.
+- **Link providers are event listeners.** `#[AsLlmsTxtLinkProvider]` (autoconfigured in `loadExtension()`, the
+  reflector typed `ReflectionClass|ReflectionMethod` since Symfony reads the targets from it) only adds the
+  `llms_txt.link_provider` tag `{section, method, priority}`. `LinkProviderPass` (before optimization, after the
+  autoconfiguration, before `RegisterListenersPass`) validates each tag and registers a `LinkProviderListener` tagged
+  `kernel.event_listener` with the provider's priority: providers and hand-written listeners share one order. The
+  provider is a `Closure::fromCallable()` definition; the listener checks the result is iterable, not each link.
 - **Discovery** goes through WebLink: `DiscoveryLinkListener` (priority 8) adds a link to the request's `_links`, which
   WebLink's `AddLinkHeaderListener` (priority 0) serializes with the other links. Only successful HTML main requests
   (not XHR, Turbo Frames, redirects, errors, other formats).
@@ -110,10 +118,11 @@ composer normalize
 
 ## Domain Exceptions
 
-| Exception                     | Thrown when                                                                     |
-| ----------------------------- | ------------------------------------------------------------------------------- |
-| `MissingTitleException`       | The document has no title (`llms_txt.title` unset and no listener sets it)      |
-| `InvalidRouteOptionException` | A route's `llms_txt` option is invalid, or set on a route that needs parameters |
+| Exception                      | Thrown when                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| `MissingTitleException`        | The document has no title (`llms_txt.title` unset and no listener sets it)      |
+| `InvalidRouteOptionException`  | A route's `llms_txt` option is invalid, or set on a route that needs parameters |
+| `InvalidLinkProviderException` | A `llms_txt.link_provider` tag is invalid, or its provider returns no iterable  |
 
 All implement `LlmsTxtExceptionInterface`.
 
@@ -157,8 +166,9 @@ Lightweight tag `vX.Y.Z` on `origin/main` once CI is green, with a GitHub releas
 
 ## Common Patterns
 
-- **Adding links**: a listener of `LlmsTxtPopulateEvent` calls `$event->getDocument()->addLinks($section, $generator)`;
-  `addLink()` only for a handful of links.
+- **Adding links**: `#[AsLlmsTxtLinkProvider(section: …)]` on a method returning `iterable<Link>` (a generator for
+  large sections); a `LlmsTxtPopulateEvent` listener to change the document itself, which calls
+  `$event->getDocument()->addLinks($section, $generator)`, `addLink()` only for a handful of links.
 - **Static pages**: `options: ['llms_txt' => new LlmsTxtEntry(title: …, description: …, section: …)]` on the route;
   the array form (`{title, description, section}`) for YAML/XML routes, both validated by `LlmsTxtEntry`.
 - **Bundle configuration**: all options are defined in `LlmsTxtBundle::configure()` and wired in

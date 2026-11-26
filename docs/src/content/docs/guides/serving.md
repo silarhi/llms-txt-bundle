@@ -2,7 +2,7 @@
 title: Serving the file
 description: Serve llms.txt on the fly or dump it with the llms-txt:dump command.
 sidebar:
-    order: 4
+    order: 5
 ---
 
 ## On the fly

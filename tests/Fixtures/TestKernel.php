@@ -95,6 +95,7 @@ final class TestKernel extends Kernel
 
         $services = $container->services();
         $services->set(PopulateSubscriber::class)->autowire()->autoconfigure();
+        $services->set(CatalogLinks::class)->autoconfigure();
         $services->set(PageController::class)->autowire()->autoconfigure()->tag('controller.service_arguments');
     }
 

@@ -14,8 +14,12 @@ declare(strict_types=1);
 namespace Silarhi\LlmsTxtBundle;
 
 use Override;
+use ReflectionClass;
+use ReflectionMethod;
+use Silarhi\LlmsTxtBundle\Attribute\AsLlmsTxtLinkProvider;
 use Silarhi\LlmsTxtBundle\Command\DumpCommand;
 use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
+use Silarhi\LlmsTxtBundle\DependencyInjection\LinkProviderPass;
 use Silarhi\LlmsTxtBundle\DependencyInjection\WebLinkPass;
 use Silarhi\LlmsTxtBundle\EventListener\DiscoveryLinkListener;
 use Silarhi\LlmsTxtBundle\EventListener\RouteOptionsListener;
@@ -29,6 +33,7 @@ use Silarhi\LlmsTxtBundle\Service\UrlGenerator;
 use Silarhi\LlmsTxtBundle\Twig\LlmsTxtExtension;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -49,6 +54,8 @@ final class LlmsTxtBundle extends AbstractBundle
         parent::build($container);
 
         $container->addCompilerPass(new WebLinkPass());
+        // after the autoconfiguration of the attribute, before the event listeners are registered
+        $container->addCompilerPass(new LinkProviderPass());
     }
 
     #[Override]
@@ -108,6 +115,16 @@ final class LlmsTxtBundle extends AbstractBundle
     #[Override]
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
+        // ReflectionClass|ReflectionMethod: Symfony reads the targets from this type, PHPStan's stub only knows Reflector
+        // @phpstan-ignore argument.type
+        $builder->registerAttributeForAutoconfiguration(AsLlmsTxtLinkProvider::class, static function (ChildDefinition $definition, AsLlmsTxtLinkProvider $attribute, ReflectionClass|ReflectionMethod $reflector): void {
+            $definition->addTag(LinkProviderPass::TAG, [
+                'section' => $attribute->section,
+                'method' => $reflector instanceof ReflectionMethod ? $reflector->getName() : ($attribute->method ?? '__invoke'),
+                'priority' => $attribute->priority,
+            ]);
+        });
+
         /** @var array{
          *     title: string|null,
          *     summary: string|null,

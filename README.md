@@ -33,7 +33,8 @@
 
 ## Features
 
-- **Event driven**: listeners of `LlmsTxtPopulateEvent` add the links, from your repositories, like `SitemapPopulateEvent`
+- **Link providers**: a `#[AsLlmsTxtLinkProvider(section: 'Products')]` method returns the links of a section, from your repositories
+- **Event driven**: listeners of `LlmsTxtPopulateEvent` change the whole document, like `SitemapPopulateEvent`
 - **Route options**: static pages join the file with an `llms_txt` route option, like the `sitemap` one
 - **On the fly or dumped**: the controller serves the dumped file when there is one, and builds it otherwise
 - **Flat memory**: links added as generators are read one at a time, streamed to the response or the dumped file
@@ -76,7 +77,7 @@ public function contact(): Response
 ```
 
 `GET /llms.txt` now lists the contact page. Add the pages of your database from
-[an event listener](https://llms-txt-bundle.silarhi.dev/guides/event-listener/), or dump the file with
+[a link provider](https://llms-txt-bundle.silarhi.dev/guides/link-providers/), or dump the file with
 `php bin/console llms-txt:dump`.
 
 ## Documentation
@@ -84,7 +85,7 @@ public function contact(): Response
 Everything else is on **[llms-txt-bundle.silarhi.dev](https://llms-txt-bundle.silarhi.dev)**:
 
 - [Installation](https://llms-txt-bundle.silarhi.dev/getting-started/installation/) and [configuration reference](https://llms-txt-bundle.silarhi.dev/getting-started/configuration/)
-- Adding links: [event listeners](https://llms-txt-bundle.silarhi.dev/guides/event-listener/), [generators](https://llms-txt-bundle.silarhi.dev/guides/generators/) for large sections, [route options](https://llms-txt-bundle.silarhi.dev/guides/route-options/)
+- Adding links: [link providers](https://llms-txt-bundle.silarhi.dev/guides/link-providers/), [event listeners](https://llms-txt-bundle.silarhi.dev/guides/event-listener/), [generators](https://llms-txt-bundle.silarhi.dev/guides/generators/) for large sections, [route options](https://llms-txt-bundle.silarhi.dev/guides/route-options/)
 - [Serving the file](https://llms-txt-bundle.silarhi.dev/guides/serving/), on the fly or dumped
 - [Discovery](https://llms-txt-bundle.silarhi.dev/guides/discovery/): `<link>` tag and `Link` header
 

@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - Unreleased
+
+### Added
+
+- `#[AsLlmsTxtLinkProvider(section: 'Products')]` registers a method returning the links of a section, without writing a `LlmsTxtPopulateEvent` listener: on a method (one service can feed several sections), or on a class for its `__invoke()` method. A `priority` orders providers and listeners together. The attribute adds the `llms_txt.link_provider` tag, which services can also carry by hand. An invalid provider fails with `InvalidLinkProviderException`.
+
 ## [1.4.0] - 2026-10-29
 
 ### Security
@@ -51,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Document::addLinks()` takes an iterable read only while the file is rendered: with a generator, the memory stays flat whatever the number of links.
 - Discovery: the `llms_txt_link()` and `llms_txt_url()` Twig functions, and an opt-in `Link` header on HTML pages through WebLink (`discovery.link_header`).
 
+[1.5.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.4.0...HEAD
 [1.4.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.1.1...v1.2.0

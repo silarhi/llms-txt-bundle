@@ -2,7 +2,7 @@
 title: Discovery
 description: Advertise llms.txt with a link tag or a Link header.
 sidebar:
-    order: 5
+    order: 6
 ---
 
 The [llms.txt proposal](https://llmstxt.org) only sets the location of the file, `/llms.txt`. Three ways to advertise

@@ -2,7 +2,7 @@
 title: 'Lots of links: generators'
 description: Keep the memory flat with generators and keyset pagination, whatever the number of links.
 sidebar:
-    order: 2
+    order: 3
 ---
 
 `addLink()` keeps each link in memory until the file is rendered. For large sections, hand `addLinks()` an iterable

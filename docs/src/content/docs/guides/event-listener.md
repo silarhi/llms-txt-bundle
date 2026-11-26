@@ -2,7 +2,7 @@
 title: From an event listener
 description: Add links to llms.txt from a LlmsTxtPopulateEvent listener.
 sidebar:
-    order: 1
+    order: 2
 ---
 
 ```php

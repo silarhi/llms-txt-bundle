@@ -2,7 +2,7 @@
 title: From route options
 description: Add static pages to llms.txt with an llms_txt route option.
 sidebar:
-    order: 3
+    order: 4
 ---
 
 ```php
@@ -29,7 +29,8 @@ contact:
         llms_txt: { title: Contact, description: How to reach the team }
 ```
 
-Only routes without mandatory parameters can carry the option: add the others from a listener.
+Only routes without mandatory parameters can carry the option: add the others from a
+[link provider](/guides/link-providers/).
 
 ## Invalid options
 
