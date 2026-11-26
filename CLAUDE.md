@@ -24,22 +24,26 @@ src/
 ├── Controller/         # LlmsTxtController (two services: llms.txt, llms-full.txt): serves the dumped file, or renders it whole into a php://temp buffer
 │                       #   (Content-Length, ETag, 304) before responding
 ├── DependencyInjection/ # WebLinkPass: discovery.link_header needs symfony/web-link and framework.web_link,
-│                       #   LinkProviderPass: one LinkProviderListener per llms_txt.link_provider tag
+│                       #   LinkProviderPass: one LinkProviderListener per llms_txt.link_provider tag,
+│                       #   MarkdownEscapingPass: MarkdownEscapingStrategy as Twig's autoescape, with markdown_versions
 ├── Event/              # LlmsTxtPopulateEvent
 ├── EventListener/      # RouteOptionsListener (the "llms_txt" route option), LinkProviderListener (one link provider),
+│                       #   MarkdownVersionListener (md format, Accept negotiation, Vary, rel="alternate" of the
+│                       #   Markdown routes),
 │                       #   DiscoveryLinkListener (Link header of HTML pages, through WebLink's "_links")
 ├── Exception/          # LlmsTxtExceptionInterface and implementations
 ├── Model/              # Document, Section (links or lazy iterables of links), Link (+ content for llms-full.txt)
-├── Routing/            # LlmsTxtEntry: the "llms_txt" route option as an object (fromArray() for YAML/XML routes)
+├── Routing/            # LlmsTxtEntry: the "llms_txt" route option as an object (fromArray() for YAML/XML routes),
+│                       #   MarkdownRoutes (@internal: the routes whose "_format" requirement lists "md", cached)
 ├── Service/            # Generator (+ interface), MarkdownRenderer, FullMarkdownRenderer (+ RendererInterface),
 │                       #   Markdown (@internal: inline text, escaping, section order, chunks), Dumper (+ interface),
 │                       #   UrlGenerator (absolute URL of the file, for discovery)
-├── Twig/               # LlmsTxtExtension (llms_txt_url, llms_txt_link)
+├── Twig/               # LlmsTxtExtension (llms_txt_url, llms_txt_link), MarkdownEscapingStrategy (no escaping in *.md.twig)
 └── LlmsTxtBundle.php   # Bundle class with configuration tree and service wiring
 config/
 └── routes.php          # GET|HEAD /llms.txt, /llms-full.txt (404 unless full.enabled)
 tests/                  # PHPUnit tests mirroring src/, Functional/ (LlmsTxtTest, FlatMemoryTest),
-                        #   Fixtures/ (TestKernel, PopulateSubscriber, CatalogLinks, PageController,
+                        #   Fixtures/ (TestKernel, PopulateSubscriber, CatalogLinks, PageController (an HTML and Markdown action),
                         #   FailingStreamWrapper, FailingPhpStreamWrapper, templates/)
 ```
 
@@ -113,6 +117,20 @@ composer normalize
   `MarkdownRenderer`, a second controller and dumper with `FULL_FILENAME`. `Link::$content` (a string, or a closure
   returning a string or `iterable<string>`) is only read by the full renderer: the closure spares `llms.txt` building
   the pages. Its route is always in `routes.php`; the controller answers 404 while `full.enabled` is false.
+- **Markdown versions are a route requirement.** With `markdown_versions` (off by default), a route whose `_format`
+  requirement names `md` among its `|` alternatives (`MarkdownRoutes::accepts()`: a pattern merely matching `md`, such
+  as `[a-z]+`, does not opt in) has a Markdown version: at its `.md` URL with `{_format}` in the path, Accept-only
+  without (the router ignores a requirement on a variable not in the path). `MarkdownRoutes` caches the names in
+  `%kernel.build_dir%/llms_txt_markdown_routes.php` (a `ConfigCache` on the collection resources, also a cache
+  warmer). `MarkdownVersionListener` (`kernel.request` 16, after the router) registers the `md` format on the request
+  (static, unless the app maps it), switches `_format` to `md` when `Accept` lists a Markdown type before an HTML one
+  (wildcards ignored); on the response, `Vary: Accept` and the WebLink `alternate` link on HTML main requests (the
+  `.md` URL, or the page URL when `_format` lands in the query string). `MarkdownEscapingPass` swaps Twig's `autoescape`
+  `'name'` (TwigBundle's value without `autoescape_service`) for `[MarkdownEscapingStrategy::class, 'guess']`: an array,
+  since the compiled container cannot dump a closure and Twig ignores string callables (Rector's
+  `ArrayToFirstClassCallableRector` is skipped there). `LlmsTxtEntry::$markdown` `null` follows the requirement:
+  the route options cache stores the option (5th element) and whether the route has a `.md` URL (6th), the toggle is
+  applied in `populate()` since the cache does not follow the configuration; a 1.4 cache (4 elements) still works.
 - **Discovery** goes through WebLink: `DiscoveryLinkListener` (priority 8) adds a link to the request's `_links`, which
   WebLink's `AddLinkHeaderListener` (priority 0) serializes with the other links. Only successful HTML main requests
   (not XHR, Turbo Frames, redirects, errors, other formats).

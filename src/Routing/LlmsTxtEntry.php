@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Silarhi\LlmsTxtBundle\Routing;
 
+use function is_bool;
 use function is_string;
 
 use Silarhi\LlmsTxtBundle\Exception\InvalidRouteOptionException;
@@ -26,12 +27,17 @@ use function sprintf;
  */
 final readonly class LlmsTxtEntry
 {
-    private const KEYS = ['title', 'description', 'section'];
+    private const KEYS = ['title', 'description', 'section', 'markdown'];
 
     /**
      * @param string      $title       the text of the link
      * @param string|null $description rendered after the link
      * @param string|null $section     the H2 section of the link, "llms_txt.route_section" by default
+     * @param bool|null   $markdown    the link points to the Markdown version of the page: the URL generated with
+     *                                 "_format: md", which needs a {_format} in the path of the route. null (the
+     *                                 default) does with "llms_txt.markdown_versions" when the route has a Markdown
+     *                                 version at a URL of its own: a {_format} in its path, and "md" in its "_format"
+     *                                 requirement. false keeps the URL of the HTML page
      *
      * @throws InvalidRouteOptionException on an empty title or section
      */
@@ -39,6 +45,7 @@ final readonly class LlmsTxtEntry
         public string $title,
         public ?string $description = null,
         public ?string $section = null,
+        public ?bool $markdown = null,
     ) {
         if ('' === trim($title)) {
             throw new InvalidRouteOptionException('An llms.txt entry needs a non-empty "title".');
@@ -50,7 +57,7 @@ final readonly class LlmsTxtEntry
     }
 
     /**
-     * The array form of the option, for the routes YAML or XML declare: {title: …, description: …, section: …}.
+     * The array form of the option, for the routes YAML or XML declare: {title: …, description: …, section: …, markdown: …}.
      *
      * @param array<mixed> $option
      *
@@ -66,6 +73,7 @@ final readonly class LlmsTxtEntry
         $title = $option['title'] ?? null;
         $description = $option['description'] ?? null;
         $section = $option['section'] ?? null;
+        $markdown = $option['markdown'] ?? null;
         if (!is_string($title)) {
             throw new InvalidRouteOptionException('An llms.txt entry needs a non-empty "title".');
         }
@@ -76,6 +84,10 @@ final readonly class LlmsTxtEntry
             throw new InvalidRouteOptionException(sprintf('The "section" of an llms.txt entry must be a non-empty string, "%s" given.', get_debug_type($section)));
         }
 
-        return new self($title, $description, $section);
+        if (null !== $markdown && !is_bool($markdown)) {
+            throw new InvalidRouteOptionException(sprintf('The "markdown" of an llms.txt entry must be a boolean or null, "%s" given.', get_debug_type($markdown)));
+        }
+
+        return new self($title, $description, $section, $markdown);
     }
 }

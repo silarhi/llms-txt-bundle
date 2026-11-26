@@ -92,6 +92,7 @@ final class TestKernel extends Kernel
             'summary' => 'An example site.',
             'dump_directory' => '%kernel.cache_dir%/llms_txt',
             'full' => true,
+            'markdown_versions' => true,
             'discovery' => ['link_header' => true],
         ]);
 
@@ -111,6 +112,16 @@ final class TestKernel extends Kernel
         $routes->add('legal', '/legal')
             ->controller([PageController::class, 'html'])
             ->options(['llms_txt' => ['title' => 'Legal notice', 'section' => 'Optional']]);
+        $routes->add('guide', '/guide.{_format}')
+            ->controller([PageController::class, 'guide'])
+            ->defaults(['_format' => 'html'])
+            ->requirements(['_format' => 'html|md'])
+            ->options(['llms_txt' => new LlmsTxtEntry(title: 'Guide')]);
+        // Accept-only: the requirement opts in, there is no {_format} in the path
+        $routes->add('faq', '/faq')
+            ->controller([PageController::class, 'guide'])
+            ->defaults(['_format' => 'html'])
+            ->requirements(['_format' => 'html|md']);
         $routes->add('json', '/json')
             ->controller([PageController::class, 'json']);
     }

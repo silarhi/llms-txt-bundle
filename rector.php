@@ -12,6 +12,7 @@ declare(strict_types=1);
  */
 
 use Rector\Config\RectorConfig;
+use Rector\Php81\Rector\Array_\ArrayToFirstClassCallableRector;
 use Rector\Renaming\Rector\Name\RenameClassRector;
 use Rector\Symfony\CodeQuality\Rector\Class_\EventSubscriberToAttributeRector;
 
@@ -28,6 +29,8 @@ return RectorConfig::configure()
         RenameClassRector::class,
         // The bundle registers its services without autoconfiguration: #[AsEventListener] would not be read
         EventSubscriberToAttributeRector::class,
+        // Twig's autoescape strategy goes into the compiled container, which cannot dump a closure
+        ArrayToFirstClassCallableRector::class => [__DIR__ . '/src/DependencyInjection/MarkdownEscapingPass.php'],
     ])
     ->reportUnusedSkips()
     ->withPreparedSets(

@@ -20,9 +20,12 @@ use Silarhi\LlmsTxtBundle\Attribute\AsLlmsTxtLinkProvider;
 use Silarhi\LlmsTxtBundle\Command\DumpCommand;
 use Silarhi\LlmsTxtBundle\Controller\LlmsTxtController;
 use Silarhi\LlmsTxtBundle\DependencyInjection\LinkProviderPass;
+use Silarhi\LlmsTxtBundle\DependencyInjection\MarkdownEscapingPass;
 use Silarhi\LlmsTxtBundle\DependencyInjection\WebLinkPass;
 use Silarhi\LlmsTxtBundle\EventListener\DiscoveryLinkListener;
+use Silarhi\LlmsTxtBundle\EventListener\MarkdownVersionListener;
 use Silarhi\LlmsTxtBundle\EventListener\RouteOptionsListener;
+use Silarhi\LlmsTxtBundle\Routing\MarkdownRoutes;
 use Silarhi\LlmsTxtBundle\Service\Dumper;
 use Silarhi\LlmsTxtBundle\Service\DumperInterface;
 use Silarhi\LlmsTxtBundle\Service\FullMarkdownRenderer;
@@ -53,6 +56,11 @@ final class LlmsTxtBundle extends AbstractBundle
 
     public const FULL_ROUTE = 'llms_txt_full';
 
+    /**
+     * The request format of the Markdown versions of the pages ("llms_txt.markdown_versions"), served as text/markdown.
+     */
+    public const MARKDOWN_FORMAT = 'md';
+
     #[Override]
     public function build(ContainerBuilder $container): void
     {
@@ -61,6 +69,7 @@ final class LlmsTxtBundle extends AbstractBundle
         $container->addCompilerPass(new WebLinkPass());
         // after the autoconfiguration of the attribute, before the event listeners are registered
         $container->addCompilerPass(new LinkProviderPass());
+        $container->addCompilerPass(new MarkdownEscapingPass());
     }
 
     #[Override]
@@ -104,6 +113,10 @@ final class LlmsTxtBundle extends AbstractBundle
                     ->info('llms-full.txt: the Markdown of the pages whose links have a "content", served at /llms-full.txt and dumped with llms.txt.')
                     ->canBeEnabled()
                 ->end()
+                ->arrayNode('markdown_versions')
+                    ->info('The Markdown versions of the pages: the routes whose "_format" requirement lists "md" answer Markdown to an Accept header preferring it, and link to it. Registers the "md" format, and stops Twig from escaping HTML in *.md.twig.')
+                    ->canBeEnabled()
+                ->end()
                 ->arrayNode('discovery')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -143,6 +156,7 @@ final class LlmsTxtBundle extends AbstractBundle
          *     content_type: string,
          *     max_age: int,
          *     full: array{enabled: bool},
+         *     markdown_versions: array{enabled: bool},
          *     discovery: array{link_header: bool, rel: string},
          * } $config */
         $services = $container->services();
@@ -196,9 +210,19 @@ final class LlmsTxtBundle extends AbstractBundle
             ->public();
 
         $services->set('llms_txt.route_options_listener', RouteOptionsListener::class)
-            ->args([service('router'), $config['route_section'], service('config_cache_factory'), '%kernel.build_dir%'])
+            ->args([service('router'), $config['route_section'], service('config_cache_factory'), '%kernel.build_dir%', $config['markdown_versions']['enabled']])
             ->tag('kernel.event_subscriber')
             ->tag('kernel.cache_warmer');
+
+        if ($config['markdown_versions']['enabled']) {
+            $services->set('llms_txt.markdown_routes', MarkdownRoutes::class)
+                ->args([service('router'), service('config_cache_factory'), '%kernel.build_dir%'])
+                ->tag('kernel.cache_warmer');
+
+            $services->set(MarkdownEscapingPass::LISTENER, MarkdownVersionListener::class)
+                ->args([service('router'), service('llms_txt.markdown_routes')])
+                ->tag('kernel.event_subscriber');
+        }
 
         if ($config['discovery']['link_header']) {
             $services->set('llms_txt.discovery_link_listener', DiscoveryLinkListener::class)

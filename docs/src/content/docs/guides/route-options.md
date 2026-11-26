@@ -32,6 +32,21 @@ contact:
 Only routes without mandatory parameters can carry the option: add the others from a
 [link provider](/guides/link-providers/).
 
+## Markdown versions
+
+With [`markdown_versions`](/guides/markdown-versions/), the link points to the Markdown version of the page when it has
+a URL of its own: the path of the route has a `{_format}`, and its requirement lists `md`. The URL is generated with
+`_format: md`.
+
+```php
+#[Route('/guide.{_format}', name: 'guide', format: 'html', requirements: ['_format' => 'html|md'], options: [
+    'llms_txt' => new LlmsTxtEntry(title: 'Guide'), // - [Guide](https://example.com/guide.md)
+])]
+```
+
+An Accept-only page, without `{_format}` in its path, keeps the URL of the page. `markdown: false` keeps it too;
+`markdown: true` forces the `.md` URL, which still needs a `{_format}` in the path.
+
 ## Invalid options
 
 With `LlmsTxtEntry`, an empty title or section fails as soon as the routes load, `cache:warmup` included. The array
