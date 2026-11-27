@@ -31,8 +31,4 @@ final class LlmsTxt
      * The request format of the Markdown versions of the pages ("llms_txt.markdown_versions"), served as text/markdown.
      */
     public const MARKDOWN_FORMAT = 'md';
-
-    private function __construct()
-    {
-    }
 }

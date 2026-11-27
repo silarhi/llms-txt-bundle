@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - Unreleased
+
+### Fixed
+
+- `debug:llms-txt` names a listener given as a string (`'App\Listener::populate'`, a function name) as is: it appended `::__invoke`.
+
 ## [1.6.0] - 2026-11-27
 
 ### Added
@@ -80,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Document::addLinks()` takes an iterable read only while the file is rendered: with a generator, the memory stays flat whatever the number of links.
 - Discovery: the `llms_txt_link()` and `llms_txt_url()` Twig functions, and an opt-in `Link` header on HTML pages through WebLink (`discovery.link_header`).
 
+[1.6.1]: https://github.com/silarhi/llms-txt-bundle/compare/v1.6.0...HEAD
 [1.6.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.5.1...v1.6.0
 [1.5.1]: https://github.com/silarhi/llms-txt-bundle/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.4.0...v1.5.0
