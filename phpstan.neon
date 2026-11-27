@@ -43,6 +43,14 @@ parameters:
             message: '#^Unused Silarhi\\LlmsTxtBundle\\Tests\\Fixtures\\CatalogLinks::staticLinks$#'
             path: tests/Fixtures/CatalogLinks.php
             count: 1
+        # Symfony 8.1 types getListeners() as list<callable>, but the dispatcher accepts any listener (an array naming
+        # a missing method): the check stays. Older versions return array, hence no report when it does not match
+        -
+            identifier: function.alreadyNarrowedType
+            path: src/Debug/SourceDescriber.php
+            message: '#is_callable#'
+            count: 1
+            reportUnmatched: false
         # the parent leaves its ReflectionClass without a type: a ReflectionClass<object> @param is not contravariant
         -
             identifier: missingType.generics
