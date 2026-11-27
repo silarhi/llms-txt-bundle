@@ -92,6 +92,7 @@ composer normalize
 ## CI/CD
 
 - Uses **Laminas CI Matrix Action** (`.github/workflows/continuous-integration.yml`)
+- PHPStan runs once, on the latest PHP with the latest dependencies ("PHPStan on the latest PHP" in `.laminas-ci.json`), not in the matrix: an inline `@phpstan-ignore` only has to match that setup
 - Configured extensions: `pcov`
 - Ignores PHP platform requirements for PHP 8.4+ (future versions)
 - Additional checks (`.laminas-ci.json`), on lowest PHP with latest dependencies:

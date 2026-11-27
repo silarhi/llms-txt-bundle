@@ -46,7 +46,7 @@ final readonly class SourceDescriber
         $sources = [];
         foreach ($this->dispatcher->getListeners(LlmsTxtPopulateEvent::class) as $listener) {
             // with an event name, a list of listeners, not of lists
-            if (!is_callable($listener)) {
+            if (!is_callable($listener)) { // @phpstan-ignore function.alreadyNarrowedType (Symfony 8.1 types them as callables, the dispatcher takes any listener)
                 continue;
             }
 
