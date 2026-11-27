@@ -100,7 +100,9 @@ composer normalize
   suite without the `bundle` group (the `DependencyInjection/` tests, `LlmsTxtBundleTest`). The `functional` suite (its
   kernel needs the framework) is left out. Keep `src/` outside `LlmsTxtBundle.php` and `DependencyInjection/` free of
   DI and Config-definition APIs, and of the `LlmsTxtBundle` constants (use `LlmsTxt`): applications without a kernel
-  build the services by hand
+  build the services by hand. "PHPStan on the latest stable PHP" (PHP 8.5, latest dependencies) runs alongside the
+  matrix PHPStan job (lowest PHP): types that only newer Symfony versions narrow show up there. An ignore needed on one
+  side only takes `reportUnmatched: false` (`phpstan.neon`: `function.alreadyNarrowedType` in `SourceDescriber`)
 - The `main` ruleset requires the `CI passed` job; coverage is published to the `badges` branch
 - Runs on: `ubuntu-latest`
 - Documentation site (`.github/workflows/docs.yml`): the reusable `silarhi/docs-kit` workflow builds `docs/` when it
