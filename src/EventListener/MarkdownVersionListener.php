@@ -104,7 +104,8 @@ final readonly class MarkdownVersionListener implements EventSubscriberInterface
 
         // WebLink is optional: without it, there is no Link header to add the alternate link to
         if (!class_exists(GenericLinkProvider::class)) {
-            return;
+            // symfony/web-link is a dev dependency: no CI job runs without it
+            return; // @codeCoverageIgnore
         }
 
         $links = $request->attributes->get('_links', new GenericLinkProvider());

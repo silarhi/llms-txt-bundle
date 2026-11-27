@@ -125,6 +125,35 @@ final class MarkdownVersionListenerTest extends TestCase
         self::assertSame([$href], array_map(static fn (\Psr\Link\LinkInterface $link): string => $link->getHref(), [...$links->getLinksByRel('alternate')]));
     }
 
+    public function testFallsBackToThePageUrlWhenTheMarkdownUrlCannotBeGenerated(): void
+    {
+        // without the "slug" in its route parameters, the .md URL misses a mandatory parameter
+        $request = $this->createRequest('/docs/intro', 'doc');
+        $listener = $this->createListener();
+
+        $listener->onKernelRequest($this->createRequestEvent($request));
+        $listener->onKernelResponse($this->createResponseEvent($request, new Response()));
+
+        $links = $request->attributes->get('_links');
+        self::assertInstanceOf(LinkProviderInterface::class, $links);
+        self::assertSame(['https://example.com/docs/intro'], array_map(static fn (\Psr\Link\LinkInterface $link): string => $link->getHref(), [...$links->getLinksByRel('alternate')]));
+    }
+
+    public function testLeavesALinkProviderThatCannotEvolve(): void
+    {
+        $request = $this->createRequest('/guide', 'guide');
+        $links = self::createStub(LinkProviderInterface::class);
+        $request->attributes->set('_links', $links);
+        $listener = $this->createListener();
+
+        $listener->onKernelRequest($this->createRequestEvent($request));
+        $response = new Response();
+        $listener->onKernelResponse($this->createResponseEvent($request, $response));
+
+        self::assertSame(['Accept'], $response->getVary());
+        self::assertSame($links, $request->attributes->get('_links'));
+    }
+
     public function testDoesNotLinkTheMarkdownVersionToItself(): void
     {
         $request = $this->createRequest('/guide.md', 'guide');
@@ -158,6 +187,7 @@ final class MarkdownVersionListenerTest extends TestCase
             $routes = new RouteCollection();
             $routes->add('guide', new Route('/guide.{_format}', ['_format' => 'html'], ['_format' => 'html|md']));
             $routes->add('faq', new Route('/faq', ['_format' => 'html'], ['_format' => 'html|md']));
+            $routes->add('doc', new Route('/docs/{slug}.{_format}', ['_format' => 'html'], ['_format' => 'html|md']));
             $routes->add('contact', new Route('/contact'));
 
             return $routes;

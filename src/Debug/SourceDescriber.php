@@ -64,6 +64,8 @@ final readonly class SourceDescriber
                 $target instanceof RouteOptionsListener => new Source($priority, Source::ROUTE_OPTIONS, 'the "llms_txt" option of the routes', null),
                 $target instanceof Closure => new Source($priority, Source::LISTENER, 'Closure', null),
                 is_object($target) => new Source($priority, Source::LISTENER, $target::class . '::' . $method, null),
+                // a function or "Class::method" string names itself
+                is_string($listener) => new Source($priority, Source::LISTENER, $listener, null),
                 default => new Source($priority, Source::LISTENER, (is_string($target) ? $target : get_debug_type($target)) . '::' . $method, null),
             };
         }

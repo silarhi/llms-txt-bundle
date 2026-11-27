@@ -78,4 +78,25 @@ final class MarkdownRoutesTest extends TestCase
             (new Filesystem())->remove($cacheDir);
         }
     }
+
+    public function testReadsTheRoutesWhenTheCacheCannotBeWritten(): void
+    {
+        $cacheDir = sys_get_temp_dir() . '/llms-txt-bundle/markdown-routes-' . bin2hex(random_bytes(4));
+        (new Filesystem())->dumpFile($cacheDir . '/not-a-directory', '');
+        $router = new Router(new ClosureLoader(), static function (): RouteCollection {
+            $routes = new RouteCollection();
+            $routes->add('guide', new Route('/guide.{_format}', requirements: ['_format' => 'html|md']));
+            $routes->add('contact', new Route('/contact'));
+
+            return $routes;
+        });
+
+        try {
+            $routes = new MarkdownRoutes($router, new ConfigCacheFactory(false), $cacheDir . '/not-a-directory');
+            self::assertTrue($routes->has('guide'));
+            self::assertFalse($routes->has('contact'));
+        } finally {
+            (new Filesystem())->remove($cacheDir);
+        }
+    }
 }
