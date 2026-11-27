@@ -19,7 +19,7 @@ use Override;
 use Silarhi\LlmsTxtBundle\Event\LlmsTxtPopulateEvent;
 use Silarhi\LlmsTxtBundle\Exception\InvalidRouteOptionException;
 use Silarhi\LlmsTxtBundle\Exception\LlmsTxtExceptionInterface;
-use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
+use Silarhi\LlmsTxtBundle\LlmsTxt;
 use Silarhi\LlmsTxtBundle\Model\Link;
 use Silarhi\LlmsTxtBundle\Routing\LlmsTxtEntry;
 use Silarhi\LlmsTxtBundle\Routing\MarkdownRoutes;
@@ -173,7 +173,7 @@ final readonly class RouteOptionsListener implements EventSubscriberInterface, C
     private function generateUrl(string $route, bool $markdown): string
     {
         try {
-            return $this->router->generate($route, $markdown ? ['_format' => LlmsTxtBundle::MARKDOWN_FORMAT] : [], UrlGeneratorInterface::ABSOLUTE_URL);
+            return $this->router->generate($route, $markdown ? ['_format' => LlmsTxt::MARKDOWN_FORMAT] : [], UrlGeneratorInterface::ABSOLUTE_URL);
         } catch (MissingMandatoryParametersException $exception) {
             throw new InvalidRouteOptionException(sprintf('The route "%s" has the "%s" option but needs parameters: add its URLs from a link provider (#[AsLlmsTxtLinkProvider]) instead.', $route, self::OPTION), $exception->getCode(), previous: $exception);
         }

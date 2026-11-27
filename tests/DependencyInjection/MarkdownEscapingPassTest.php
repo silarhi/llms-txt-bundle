@@ -15,6 +15,7 @@ namespace Silarhi\LlmsTxtBundle\Tests\EventListener;
 
 namespace Silarhi\LlmsTxtBundle\Tests\DependencyInjection;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Silarhi\LlmsTxtBundle\DependencyInjection\MarkdownEscapingPass;
 use Silarhi\LlmsTxtBundle\Twig\MarkdownEscapingStrategy;
@@ -22,6 +23,11 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Twig\Environment;
 
+/**
+ * Needs symfony/dependency-injection: the "PHPUnit without the bundle dependencies" CI job removes it and excludes this
+ * group.
+ */
+#[Group('bundle')]
 final class MarkdownEscapingPassTest extends TestCase
 {
     public function testSetsTheStrategyWithTheMarkdownVersions(): void

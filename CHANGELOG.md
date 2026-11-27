@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - Unreleased
+
+### Added
+
+- `Silarhi\LlmsTxtBundle\LlmsTxt` holds the names of the files, routes and format (`FILENAME`, `FULL_FILENAME`, `ROUTE`, `FULL_ROUTE`, `MARKDOWN_FORMAT`): `LlmsTxtBundle` keeps its constants, but loading the bundle class needs `symfony/dependency-injection`.
+
+### Changed
+
+- `symfony/framework-bundle` is no longer required: the package requires the components its classes use (`symfony/config`, `symfony/event-dispatcher`, `symfony/filesystem`, `symfony/http-foundation`, `symfony/http-kernel`, `symfony/routing`, `psr/link`), and `conflict` keeps `symfony/framework-bundle` and `symfony/dependency-injection` at 6.4+. Registering the bundle still needs the framework; an application without it builds the generator, the renderers, the dumpers and the controller by hand, see [Without the bundle](https://llms-txt-bundle.silarhi.dev/getting-started/installation/#without-the-bundle).
+
 ## [1.5.1] - 2026-11-26
 
 ### Added
@@ -70,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Document::addLinks()` takes an iterable read only while the file is rendered: with a generator, the memory stays flat whatever the number of links.
 - Discovery: the `llms_txt_link()` and `llms_txt_url()` Twig functions, and an opt-in `Link` header on HTML pages through WebLink (`discovery.link_header`).
 
+[1.6.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.5.1...HEAD
 [1.5.1]: https://github.com/silarhi/llms-txt-bundle/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/silarhi/llms-txt-bundle/compare/v1.3.0...v1.4.0

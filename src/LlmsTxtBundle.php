@@ -53,18 +53,18 @@ use Twig\Environment;
 
 final class LlmsTxtBundle extends AbstractBundle
 {
-    public const FILENAME = 'llms.txt';
+    public const FILENAME = LlmsTxt::FILENAME;
 
-    public const ROUTE = 'llms_txt';
+    public const ROUTE = LlmsTxt::ROUTE;
 
-    public const FULL_FILENAME = 'llms-full.txt';
+    public const FULL_FILENAME = LlmsTxt::FULL_FILENAME;
 
-    public const FULL_ROUTE = 'llms_txt_full';
+    public const FULL_ROUTE = LlmsTxt::FULL_ROUTE;
 
     /**
      * The request format of the Markdown versions of the pages ("llms_txt.markdown_versions"), served as text/markdown.
      */
-    public const MARKDOWN_FORMAT = 'md';
+    public const MARKDOWN_FORMAT = LlmsTxt::MARKDOWN_FORMAT;
 
     #[Override]
     public function build(ContainerBuilder $container): void
