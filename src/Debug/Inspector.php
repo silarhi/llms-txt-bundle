@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Silarhi\LlmsTxtBundle\Debug;
 
 use Silarhi\LlmsTxtBundle\Exception\MissingTitleException;
-use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
+use Silarhi\LlmsTxtBundle\LlmsTxt;
 use Silarhi\LlmsTxtBundle\Model\Section;
 use Silarhi\LlmsTxtBundle\Service\GeneratorInterface;
 use Silarhi\LlmsTxtBundle\Service\RendererInterface;
@@ -98,7 +98,7 @@ final readonly class Inspector
      */
     private function describeFiles(): array
     {
-        $filenames = $this->fullRenderer instanceof RendererInterface ? [LlmsTxtBundle::FILENAME, LlmsTxtBundle::FULL_FILENAME] : [LlmsTxtBundle::FILENAME];
+        $filenames = $this->fullRenderer instanceof RendererInterface ? [LlmsTxt::FILENAME, LlmsTxt::FULL_FILENAME] : [LlmsTxt::FILENAME];
 
         $files = [];
         foreach ($filenames as $filename) {

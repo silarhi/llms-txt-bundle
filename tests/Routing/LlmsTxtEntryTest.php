@@ -17,15 +17,15 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Silarhi\LlmsTxtBundle\Exception\InvalidRouteOptionException;
 use Silarhi\LlmsTxtBundle\Routing\LlmsTxtEntry;
-use Symfony\Bundle\FrameworkBundle\Routing\AttributeRouteControllerLoader;
+use Silarhi\LlmsTxtBundle\Tests\Fixtures\AttributeRouteLoader;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class LlmsTxtEntryTest extends TestCase
 {
     public function testIsBuiltInARouteAttribute(): void
     {
-        // the loader of the applications: the option survives the route loading as an object
-        $route = (new AttributeRouteControllerLoader())->load(LlmsTxtEntryFixtureController::class)->get('cgu');
+        // an attribute loader: the option survives the route loading as an object
+        $route = (new AttributeRouteLoader())->load(LlmsTxtEntryFixtureController::class)->get('cgu');
 
         self::assertNotNull($route);
         self::assertEquals(new LlmsTxtEntry('CGU', 'Terms of use', 'Optional'), $route->getOption('llms_txt'));

@@ -19,7 +19,7 @@ use function is_string;
 
 use Override;
 use Psr\Link\EvolvableLinkProviderInterface;
-use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
+use Silarhi\LlmsTxtBundle\LlmsTxt;
 use Silarhi\LlmsTxtBundle\Routing\MarkdownRoutes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -68,8 +68,8 @@ final readonly class MarkdownVersionListener implements EventSubscriberInterface
     {
         $request = $event->getRequest();
         // what "framework.request.formats" would do, unless the application maps "md" itself
-        if (null === $request->getMimeType(LlmsTxtBundle::MARKDOWN_FORMAT)) {
-            $request->setFormat(LlmsTxtBundle::MARKDOWN_FORMAT, self::MARKDOWN_TYPES);
+        if (null === $request->getMimeType(LlmsTxt::MARKDOWN_FORMAT)) {
+            $request->setFormat(LlmsTxt::MARKDOWN_FORMAT, self::MARKDOWN_TYPES);
         }
 
         $route = $request->attributes->get('_route');
@@ -82,8 +82,8 @@ final readonly class MarkdownVersionListener implements EventSubscriberInterface
         // an explicit .md path already set it; an explicit .html path is the default format, as a path without suffix
         $format = $request->attributes->get('_format');
         if ((null === $format || 'html' === $format) && $this->prefersMarkdown($request)) {
-            $request->attributes->set('_format', LlmsTxtBundle::MARKDOWN_FORMAT);
-            $request->setRequestFormat(LlmsTxtBundle::MARKDOWN_FORMAT);
+            $request->attributes->set('_format', LlmsTxt::MARKDOWN_FORMAT);
+            $request->setRequestFormat(LlmsTxt::MARKDOWN_FORMAT);
         }
     }
 
@@ -98,7 +98,7 @@ final readonly class MarkdownVersionListener implements EventSubscriberInterface
         // the same URL answers HTML or Markdown: a cache must keep both
         $response->setVary('Accept', false);
 
-        if (!$event->isMainRequest() || !$response->isSuccessful() || LlmsTxtBundle::MARKDOWN_FORMAT === $request->getRequestFormat()) {
+        if (!$event->isMainRequest() || !$response->isSuccessful() || LlmsTxt::MARKDOWN_FORMAT === $request->getRequestFormat()) {
             return;
         }
 
@@ -145,7 +145,7 @@ final readonly class MarkdownVersionListener implements EventSubscriberInterface
         $parameters = $request->attributes->get('_route_params', []);
         if (is_string($route) && is_array($parameters)) {
             try {
-                $url = $this->urlGenerator->generate($route, ['_format' => LlmsTxtBundle::MARKDOWN_FORMAT] + $parameters, UrlGeneratorInterface::ABSOLUTE_URL);
+                $url = $this->urlGenerator->generate($route, ['_format' => LlmsTxt::MARKDOWN_FORMAT] + $parameters, UrlGeneratorInterface::ABSOLUTE_URL);
                 // a _format which is not in the path ends in the query string: it would not switch the format
                 $query = parse_url($url, \PHP_URL_QUERY);
                 if (!is_string($query) || !str_contains($query, '_format=')) {

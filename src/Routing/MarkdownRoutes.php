@@ -16,7 +16,7 @@ namespace Silarhi\LlmsTxtBundle\Routing;
 use function in_array;
 
 use Override;
-use Silarhi\LlmsTxtBundle\LlmsTxtBundle;
+use Silarhi\LlmsTxtBundle\LlmsTxt;
 use Symfony\Component\Config\ConfigCacheFactoryInterface;
 use Symfony\Component\Config\ConfigCacheInterface;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
@@ -62,7 +62,7 @@ final class MarkdownRoutes implements CacheWarmerInterface
 
         $alternatives = explode('|', trim(str_replace('?:', '', $requirement), '()'));
 
-        return in_array(LlmsTxtBundle::MARKDOWN_FORMAT, $alternatives, true);
+        return in_array(LlmsTxt::MARKDOWN_FORMAT, $alternatives, true);
     }
 
     public function has(string $route): bool

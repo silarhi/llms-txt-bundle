@@ -43,3 +43,8 @@ parameters:
             message: '#^Unused Silarhi\\LlmsTxtBundle\\Tests\\Fixtures\\CatalogLinks::staticLinks$#'
             path: tests/Fixtures/CatalogLinks.php
             count: 1
+        # the parent leaves its ReflectionClass without a type: a ReflectionClass<object> @param is not contravariant
+        -
+            identifier: missingType.generics
+            path: tests/Fixtures/AttributeRouteLoader.php
+            count: 1

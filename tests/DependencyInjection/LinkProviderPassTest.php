@@ -15,6 +15,7 @@ namespace Silarhi\LlmsTxtBundle\Tests\DependencyInjection;
 
 use Closure;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Silarhi\LlmsTxtBundle\DependencyInjection\LinkProviderPass;
 use Silarhi\LlmsTxtBundle\Event\LlmsTxtPopulateEvent;
@@ -25,6 +26,11 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
+/**
+ * Needs symfony/dependency-injection: the "PHPUnit without the bundle dependencies" CI job removes it and excludes this
+ * group.
+ */
+#[Group('bundle')]
 final class LinkProviderPassTest extends TestCase
 {
     public function testRegistersAListenerPerTag(): void

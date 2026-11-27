@@ -11,7 +11,11 @@ and a command dumps it.
 ## Tech Stack
 
 - **Language**: PHP 8.2+
-- **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/framework-bundle`)
+- **Framework**: Symfony 6.4 / 7.x / 8.x: `symfony/config` (`ConfigCache`), `symfony/event-dispatcher` (+ contracts),
+  `symfony/filesystem`, `symfony/http-foundation`, `symfony/http-kernel` (kernel events, cache warmers),
+  `symfony/routing`, `psr/link`
+- **Dev**: `symfony/framework-bundle`, `symfony/dependency-injection` (the bundle class and `DependencyInjection/`:
+  registering the bundle needs the framework, installing the package does not), `symfony/twig-bundle`, `twig/twig`
 - **Optional**: `symfony/console` (`llms-txt:dump`), `symfony/twig-bundle` (`llms_txt_url()`, `llms_txt_link()`),
   `symfony/web-link` (`discovery.link_header`)
 
@@ -45,12 +49,15 @@ src/
 │                       #   Markdown (@internal: inline text, escaping, section order, chunks), Dumper (+ interface),
 │                       #   UrlGenerator (absolute URL of the file, for discovery)
 ├── Twig/               # LlmsTxtExtension (llms_txt_url, llms_txt_link), MarkdownEscapingStrategy (no escaping in *.md.twig)
+├── LlmsTxt.php         # The file, route and format names (LlmsTxtBundle repeats them, but needs DI to load)
 └── LlmsTxtBundle.php   # Bundle class with configuration tree and service wiring
 config/
 └── routes.php          # GET|HEAD /llms.txt, /llms-full.txt (404 unless full.enabled)
-tests/                  # PHPUnit tests mirroring src/, Functional/ (LlmsTxtTest, FlatMemoryTest),
+tests/                  # PHPUnit tests mirroring src/ ("unit" suite), StandaloneTest (the README's "Without the bundle"),
+                        #   LlmsTxtBundleTest (the constants it keeps, "bundle" group),
+                        #   Functional/ ("functional" suite: LlmsTxtTest, FlatMemoryTest),
                         #   Fixtures/ (TestKernel, PopulateSubscriber, CatalogLinks, PageController (an HTML and Markdown action),
-                        #   FailingStreamWrapper, FailingPhpStreamWrapper, templates/)
+                        #   AttributeRouteLoader, FailingStreamWrapper, FailingPhpStreamWrapper, templates/)
 ```
 
 ## Build & Test Commands
@@ -87,7 +94,13 @@ composer normalize
 - Uses **Laminas CI Matrix Action** (`.github/workflows/continuous-integration.yml`)
 - Configured extensions: `pcov`
 - Ignores PHP platform requirements for PHP 8.4+ (future versions)
-- Additional check (`.laminas-ci.json`): `composer validate --strict && composer normalize --dry-run --diff` on lowest PHP with latest dependencies
+- Additional checks (`.laminas-ci.json`), on lowest PHP with latest dependencies:
+  `composer validate --strict && composer normalize --dry-run --diff`, and "PHPUnit without the bundle dependencies":
+  it removes `symfony/framework-bundle`, `symfony/twig-bundle` and `symfony/dependency-injection`, then runs the `unit`
+  suite without the `bundle` group (the `DependencyInjection/` tests, `LlmsTxtBundleTest`). The `functional` suite (its
+  kernel needs the framework) is left out. Keep `src/` outside `LlmsTxtBundle.php` and `DependencyInjection/` free of
+  DI and Config-definition APIs, and of the `LlmsTxtBundle` constants (use `LlmsTxt`): applications without a kernel
+  build the services by hand
 - The `main` ruleset requires the `CI passed` job; coverage is published to the `badges` branch
 - Runs on: `ubuntu-latest`
 - Documentation site (`.github/workflows/docs.yml`): the reusable `silarhi/docs-kit` workflow builds `docs/` when it

@@ -14,10 +14,16 @@ declare(strict_types=1);
 namespace Silarhi\LlmsTxtBundle\Tests\DependencyInjection;
 
 use LogicException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Silarhi\LlmsTxtBundle\DependencyInjection\WebLinkPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
+/**
+ * Needs symfony/dependency-injection: the "PHPUnit without the bundle dependencies" CI job removes it and excludes this
+ * group.
+ */
+#[Group('bundle')]
 final class WebLinkPassTest extends TestCase
 {
     public function testNeedsWebLinkForTheDiscoveryListener(): void
